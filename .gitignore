@@ -1,0 +1,73 @@
+# Byte-compiled / optimized / compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environments
+myenv/
+aiEnv/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Logs and temporary files
+*.log
+*.temp
+*.out
+*.pid
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+coverage.*
+.cache
+nosetests.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Environment files and database credentials
+.env
+*.env
+*.env.*
+
+# PostgreSQL database files
+*.pgdata
+*.pgsql
+
+# Spleeter cache and model files
+# Adjust the directory if Spleeter's model cache is saved in a custom location
+pretrained_models/
+spleeter_cache/
+
+# Spleeter output directories
+output/
+separated_audio/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# macOS / Linux / Windows system files
+.DS_Store
+Thumbs.db
+desktop.ini
+.cache/
+*.swp
+
+# Python egg files
+*.egg
+*.egg-info/
+dist/
+build/
+*.egg-info/
+
+# IDE files (VSCode, PyCharm, etc.)
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
