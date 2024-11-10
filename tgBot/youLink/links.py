@@ -1,6 +1,7 @@
 import yt_dlp
+import os
 
-def download_audio_from_youtube(url, output_path="downloads"):
+async def download_audio_from_youtube(url, output_path="downloads"):
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': f'{output_path}/%(title)s.%(ext)s',
@@ -11,10 +12,18 @@ def download_audio_from_youtube(url, output_path="downloads"):
         }],
     }
 
+    # Ensure the output directory exists
+    os.makedirs(output_path, exist_ok=True)
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         print(f"Downloading audio from: {url}")
+        info_dict = ydl.extract_info(url, download=False)  # Get video info without downloading
+        file_path = ydl.prepare_filename(info_dict)  # Original file path before post-processing
+        
+        # Perform the download, including post-processing to MP3
         ydl.download([url])
-
-# Example usage
-youtube_url = "https://www.youtube.com/watch?v=G3Y3o8psQBc&ab_channel=MINORKARAOKE"
-download_audio_from_youtube(youtube_url)
+        
+        # Replace the extension to match the post-processed file
+        mp3_path = os.path.splitext(file_path)[0] + ".mp3"
+        
+        return mp3_path  # Return the final MP3 file path
