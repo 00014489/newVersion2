@@ -176,7 +176,7 @@ async def link_exists(link: str) -> bool:
             await cur.execute(
                 """
                 SELECT EXISTS (
-                    SELECT 1 FROM user_links WHERE link = %s
+                    SELECT 1 FROM linksYou WHERE links = %s
                 );
                 """,
                 (link,)  # Pass link as a tuple
@@ -693,5 +693,55 @@ async def get_user_ids():
     except Exception as e:
         logging.error(f"Error retrieving user_ids: {e}")
         return []
+    finally:
+        await conn.close()
+
+
+async def insert_links(url: str, duration: int):
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cur:
+            # Insert the user, or update the user_name if the user_id already exists
+            await cur.execute(
+                "SELECT 1 FROM linksYou WHERE links = %s LIMIT 1",
+                (url,)
+            )
+            exists = await cur.fetchone()
+            
+            # If the link does not exist, insert the data
+            if not exists:
+                await cur.execute(
+                    """
+                    INSERT INTO linksYou (links, duration)
+                    VALUES (%s, %s)
+                    """,
+                    (url, duration)
+                )
+                await conn.commit()
+            logging.info(f"Inserted data to url {url} \n data {duration}")
+    except Exception as e:
+        logging.error(f"Error inserting or updating user: {e}")
+    finally:
+        # Ensure the connection is closed
+        await conn.close()
+
+
+async def get_link_duration(link: str) -> int | None:
+    conn = await get_db_connection()  # Assuming you have get_db_connection() defined
+    try:
+        async with conn.cursor() as cur:
+            # Query to get the duration if the link exists
+            await cur.execute(
+                """
+                SELECT duration FROM linksYou WHERE links = %s;
+                """,
+                (link,)  # Pass link as a tuple
+            )
+            # Fetch the result, which will be a single row if the link exists
+            result = await cur.fetchone()
+            return result[0] if result else None  # Return duration if found, else None
+    except Exception as e:
+        logging.error(f"Error retrieving link duration: {e}")
+        return None  # Return None in case of error
     finally:
         await conn.close()

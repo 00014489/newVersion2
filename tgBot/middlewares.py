@@ -57,6 +57,11 @@ def format_column_namesForDatabase(input_string: str):
     return f"{formatted_name}{extension}"
 
 
+def normalize_youtube_url(url):
+    # Use regex to capture the main URL pattern
+    match = re.search(r"(https://www\.youtube\.com/watch\?v=[\w-]+)", url)
+    return match.group(1) if match else url
+
 class MessageHandlerMiddleware(BaseMiddleware):
     async def __call__(self, handler, event: Update, data: dict):
         """
@@ -80,11 +85,20 @@ class MessageHandlerMiddleware(BaseMiddleware):
                     if messageText is not None and ("youtube.com" in messageText or "youtu.be" in messageText):
                     # if messageText and "youtube.com" in messageText or "youtu.be" in messageText and messageText != None:
                         # code for saving the url and user_id to the database.
-                        url = messageText.strip()
+                        filtred = normalize_youtube_url(messageText.strip())
                         # print("we are here 3")
-                        duration = await get_audio_duration(url)
-                        isPlaylist = await is_playlist_link(url)
-                        if duration < 600 and isPlaylist == False:
+                        # if await is_playlist_link(filtred):
+                            # message.reply("Please send only one file not playlist")
+                            # return
+                        if await dataPostgres.link_exists(filtred):
+                            duration = await dataPostgres.get_link_duration(filtred)
+                            print(f"Found in database")
+                            # return duration
+                        else:
+                            duration = await get_audio_duration(filtred)
+                            await dataPostgres.insert_links(filtred, duration)
+                        # isPlaylist = await is_playlist_link(filtred)
+                        if duration < 600: #and isPlaylist == False:
                             proccesing_messagee = await message.reply("Processing your YouTube audio...")
 
                             
@@ -93,7 +107,7 @@ class MessageHandlerMiddleware(BaseMiddleware):
                             else:
                                 try:
                                     # Download audio from YouTube
-                                    mp3_path = await download_audio_from_youtube(url)
+                                    mp3_path = await download_audio_from_youtube(filtred)
                                     
                                     # Send the downloaded audio file to the user
                                     if os.path.exists(mp3_path):
