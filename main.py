@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher
 from tgBot.handlers.handlers import router
-# from deploymentbot.konec import run_task_send
+from tgBot.konec import run_task_send
 # from deploymentbot.middlewares.middlewares import AudioFileMiddleware, BotMessageTrackerMiddleware
 from tgBot.middlewares import MessageHandlerMiddleware
 # Initialize logging
@@ -21,7 +21,7 @@ async def main():
     # dp.message.middleware(MessageHandlerMiddleware())
     dp.update.middleware(MessageHandlerMiddleware())  # Update middleware
     # dp.update.middleware(BotMessageTrackerMiddleware(bot))
-    # asyncio.create_task(run_task_send("./", bot))
+    asyncio.create_task(run_task_send("./", bot))
 
     try:
         # Start polling

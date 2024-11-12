@@ -12,26 +12,29 @@ import data.connection as dataPostgres
 import logging
 import aiohttp
 import urllib.parse
+import asyncio
 
 
 
 async def get_audio_duration(url):
-    if False: # for checking the database
-        return 700
-    else:
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'quiet': True,  # Suppress download logs
-            'noplaylist': True,
-            'skip_download': True,  # Avoid downloading, just get metadata
-        }
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'quiet': True,  # Suppress download logs
+        'noplaylist': True,
+        'skip_download': True,  # Avoid downloading, just get metadata
+    }
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            duration = info.get('duration', 0)  # Duration in seconds if available
-            return duration
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        duration = info.get('duration', 0)  # Duration in seconds if available
+        return duration
                         
-
+async def forward_message_to_user(bot: Bot, from_chat_id: int, message_id: int, to_chat_id: int):
+    try:
+        await bot.forward_message(chat_id=to_chat_id, from_chat_id=from_chat_id, message_id=message_id)
+        logging.info(f"Message with ID {message_id} forwarded to user {to_chat_id}.")
+    except Exception as e:
+        logging.error(f"Error forwarding message: {e}")
 
 async def is_playlist_link(url):
     if False: # for database
@@ -68,6 +71,7 @@ class MessageHandlerMiddleware(BaseMiddleware):
         This method is called automatically for each update.
         """
         # Check if the event is a message
+        bot = data.get("bot")
         if event.message:
             message = event.message  # Extract the Message object
             user_id = message.from_user.id
@@ -88,10 +92,16 @@ class MessageHandlerMiddleware(BaseMiddleware):
                             await dataPostgres.insert_links(filtred, duration, user_id)
                         if duration < 600:
                             proccesing_messagee = await message.reply("Processing your YouTube audio...")
-                            chat_id, message_id = await dataPostgres.get_link_data(filtred)
+                            id, chat_id, message_id = await dataPostgres.get_link_data(filtred)
                             
                             if message_id == 0:
-                                
+                                #cheking the order table exist or not
+                                while(True):
+                                    if await dataPostgres.check_file_exists_order_true(id):
+                                        await asyncio.sleep(15)
+                                    else:
+                                        await forward_message_to_user(bot, chat_id, message_id, user_id)
+                                        break
                                 
                                 # Process link
 

@@ -31,7 +31,7 @@ async def run_task_send(base_dir, bot: Bot):
         await check_and_match_song_folders(base_dir, bot)
 
         # Sleep for 10 seconds before the next run
-        await asyncio.sleep(10)  # Use asyncio.sleep instead of time.sleep
+        await asyncio.sleep(10)
 
 async def check_and_match_song_folders(base_dir, bot: Bot):
     folder_pattern = r"^sendSongs(\d+):(\d+):(\d+)$"

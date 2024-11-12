@@ -754,15 +754,39 @@ async def get_link_data(link: str) -> tuple[int, int] | None:
             # Query to get chat_id and message_id if the link exists
             await cur.execute(
                 """
-                SELECT chat_id, message_id FROM linksYou WHERE links = %s;
+                SELECT id, chat_id, message_id FROM linksYou WHERE links = %s;
                 """,
                 (link,)  # Pass link as a tuple
             )
             # Fetch the result, which will be a single row if the link exists
             result = await cur.fetchone()
-            return (result[0], result[1]) if result else None  # Return chat_id and message_id if found, else None
+            return (result[0], result[1], result[2]) if result else None  # Return chat_id and message_id if found, else None
     except Exception as e:
         logging.error(f"Error retrieving link data: {e}")
         return None  # Return None in case of error
     finally:
         await conn.close()
+
+async def check_file_exists_order_true(url_id: str) -> bool:
+    conn = await get_db_connection()  # Assuming this function returns an async database connection
+    try:
+        async with conn.cursor() as cur:
+            # Query to check if a file with url_id exists in order_list and has status = TRUE
+            await cur.execute(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM order_list
+                    WHERE url_id = %s AND status = TRUE
+                );
+                """,
+                (url_id,)
+            )
+            # Fetch the result and extract the boolean value
+            result = await cur.fetchone()
+            return result[0] if result else False
+    except Exception as e:
+        logging.error(f"Error checking file existence for url_id {url_id}: {e}")
+        return False
+    finally:
+        await conn.close()  # Ensure the connection is closed
