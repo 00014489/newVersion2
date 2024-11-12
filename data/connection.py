@@ -697,7 +697,7 @@ async def get_user_ids():
         await conn.close()
 
 
-async def insert_links(url: str, duration: int):
+async def insert_links(url: str, duration: int, user_id : int):
     conn = await get_db_connection()
     try:
         async with conn.cursor() as cur:
@@ -712,13 +712,13 @@ async def insert_links(url: str, duration: int):
             if not exists:
                 await cur.execute(
                     """
-                    INSERT INTO linksYou (links, duration)
-                    VALUES (%s, %s)
+                    INSERT INTO linksYou (links, duration, chatid)
+                    VALUES (%s, %s, %s)
                     """,
-                    (url, duration)
+                    (url, duration, user_id)
                 )
                 await conn.commit()
-            logging.info(f"Inserted data to url {url} \n data {duration}")
+            logging.info(f"Inserted data to url {url} \n data {duration} to user {user_id}")
     except Exception as e:
         logging.error(f"Error inserting or updating user: {e}")
     finally:
@@ -742,6 +742,27 @@ async def get_link_duration(link: str) -> int | None:
             return result[0] if result else None  # Return duration if found, else None
     except Exception as e:
         logging.error(f"Error retrieving link duration: {e}")
+        return None  # Return None in case of error
+    finally:
+        await conn.close()
+
+
+async def get_link_data(link: str) -> tuple[int, int] | None:
+    conn = await get_db_connection()  # Assuming you have get_db_connection() defined
+    try:
+        async with conn.cursor() as cur:
+            # Query to get chat_id and message_id if the link exists
+            await cur.execute(
+                """
+                SELECT chat_id, message_id FROM linksYou WHERE links = %s;
+                """,
+                (link,)  # Pass link as a tuple
+            )
+            # Fetch the result, which will be a single row if the link exists
+            result = await cur.fetchone()
+            return (result[0], result[1]) if result else None  # Return chat_id and message_id if found, else None
+    except Exception as e:
+        logging.error(f"Error retrieving link data: {e}")
         return None  # Return None in case of error
     finally:
         await conn.close()

@@ -14,9 +14,9 @@ async def percent_choose(file_id: str):
     id = await dataPostgres.get_id_by_file_id(file_id)
     # Add two buttons: one for 0% vocals and one for 15% vocals
     keyboard.add(
-        InlineKeyboardButton(text="0%", callback_data=f"mix_vocals:{id}:0"),
-        InlineKeyboardButton(text="15%", callback_data=f"mix_vocals:{id}:15"),
-        InlineKeyboardButton(text="50%", callback_data=f"mix_vocals:{id}:50")
+        InlineKeyboardButton(text="50%", callback_data=f"mix_vocals:{id}:50"),
+        InlineKeyboardButton(text="75%", callback_data=f"mix_vocals:{id}:15"),
+        InlineKeyboardButton(text="100%", callback_data=f"mix_vocals:{id}:0")
     )
 
     # Adjust the buttons in rows of 2

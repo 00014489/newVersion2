@@ -1,4 +1,4 @@
-from aiogram import BaseMiddleware
+from aiogram import BaseMiddleware, Bot, exceptions
 from aiogram.types import Message, Update, FSInputFile, InputFile
 import io
 # from aiogram.exceptions import TelegramAPIError
@@ -77,30 +77,36 @@ class MessageHandlerMiddleware(BaseMiddleware):
             if messageText and messageText.startswith("/"):
                 print("skiping the command")
                 return await handler(event, data)
-            # print("we are here 1")
             try:
                 if userPremium:
-                    # print("we are here 2")
-                    # print(f"message text is {messageText}")
                     if messageText is not None and ("youtube.com" in messageText or "youtu.be" in messageText):
-                    # if messageText and "youtube.com" in messageText or "youtu.be" in messageText and messageText != None:
-                        # code for saving the url and user_id to the database.
                         filtred = normalize_youtube_url(messageText.strip())
-                        # print("we are here 3")
-                        # if await is_playlist_link(filtred):
-                            # message.reply("Please send only one file not playlist")
-                            # return
                         if await dataPostgres.link_exists(filtred):
                             duration = await dataPostgres.get_link_duration(filtred)
-                            print(f"Found in database")
-                            # return duration
                         else:
                             duration = await get_audio_duration(filtred)
-                            await dataPostgres.insert_links(filtred, duration)
-                        # isPlaylist = await is_playlist_link(filtred)
-                        if duration < 600: #and isPlaylist == False:
+                            await dataPostgres.insert_links(filtred, duration, user_id)
+                        if duration < 600:
                             proccesing_messagee = await message.reply("Processing your YouTube audio...")
+                            chat_id, message_id = await dataPostgres.get_link_data(filtred)
+                            
+                            if message_id == 0:
+                                
+                                
+                                # Process link
 
+                                await process_link(message)  # Placeholder for link processing logic
+                                
+                                # Update the chat_id and message_id in the database
+                                await update_message_record(chat_id, message_id)
+                                
+                            elif message_record is None:
+                                # Process link
+                                await process_link(message)  # Placeholder for link processing logic
+
+                                # Update the chat_id and message_id in the database
+                                await update_message_record(chat_id, message_id)
+                            
                             
                             if False: # if exist
                                 return
@@ -126,7 +132,7 @@ class MessageHandlerMiddleware(BaseMiddleware):
                              await message.reply("Your link out of limits. no more thant 10 minutes and no playlists.")
                     elif message.audio:
                         # await message.reply("geting a audio")
-                        await self.handle_audio_message(message)
+                        await handle_audio_message(message)
                     else:
                         print(f"Unhandled message type from {username} (ID: {user_id})")
                         await message.reply("Please send aduio of link of youtube")
@@ -148,37 +154,47 @@ class MessageHandlerMiddleware(BaseMiddleware):
         # Perform any actions you need with the text, like command handling, etc.
         await message.reply(f"Received your text message: {text}")
 
-    async def handle_audio_message(self, message: Message):
-        """
-        Process audio files sent as audio (music).
-        """
-        audio = message.audio
-        # Download and process the audio file if needed
-        print(f"Received audio file: {audio.file_id} - {audio.file_name}")
-        await message.reply("Received your audio file!")
+async def handle_audio_message(message: Message):
+    """
+    Process audio files sent as audio (music).
+    """
+    audio = message.audio
+    # Download and process the audio file if needed
+    print(f"Received audio file: {audio.file_id} - {audio.file_name}")
+    await message.reply("Received your audio file!")
 
-        file_id = message.audio.file_id
-        file_name = message.audio.file_name or "Unknown_Song.mp3"
-        file_size = message.audio.file_size / (1024 * 1024)  # Convert size to MB
-        file_duration = message.audio.duration / 60  # Convert duration to minutes
+    file_id = message.audio.file_id
+    file_name = message.audio.file_name or "Unknown_Song.mp3"
+    file_size = message.audio.file_size / (1024 * 1024)  # Convert size to MB
+    file_duration = message.audio.duration / 60  # Convert duration to minutes
 
-        # Validation: Check if the file is larger than 15 MB or longer than 6 minutes
-        if file_size > 15:
-            await message.reply(f"The song is too big ({file_size:.2f} MB). Please send a song smaller than 15 MB.")
-            return
-        if file_duration > 6:
-            await message.reply(f"The song is too long ({file_duration:.2f} minutes). Please send a song shorter than 6 minutes.")
-            return
+    # Validation: Check if the file is larger than 15 MB or longer than 6 minutes
+    if file_size > 15:
+        await message.reply(f"The song is too big ({file_size:.2f} MB). Please send a song smaller than 15 MB.")
+        return
+    if file_duration > 6:
+        await message.reply(f"The song is too long ({file_duration:.2f} minutes). Please send a song shorter than 6 minutes.")
+        return
 
-        if not await dataPostgres.check_file_exists(file_id):
-            # Get the file name without the extension
-            file_name_without_extension = os.path.splitext(file_name)[0]
-            
-            # Insert into the database with the file name without the extension
-            await dataPostgres.insert_into_input_file(file_id, format_column_namesForDatabase(file_name), file_name_without_extension)
+    if not await dataPostgres.check_file_exists(file_id):
+        # Get the file name without the extension
+        file_name_without_extension = os.path.splitext(file_name)[0]
+        
+        # Insert into the database with the file name without the extension
+        await dataPostgres.insert_into_input_file(file_id, format_column_namesForDatabase(file_name), file_name_without_extension)
 
-        try:
-            await message.reply("Please select the vocal percentage...", reply_markup=await kbIn.percent_choose(file_id))
-        except Exception as e:
-            logging.error(f"Error processing audio file: {e}", exc_info=True)
-            await message.reply(f"Failed to process {file_name} due to an error: {str(e)}")
+    try:
+        await message.reply("Please select the vocal percentage...", reply_markup=await kbIn.percent_choose(file_id))
+    except Exception as e:
+        logging.error(f"Error processing audio file: {e}", exc_info=True)
+        await message.reply(f"Failed to process {file_name} due to an error: {str(e)}")
+
+async def is_message_available(bot: Bot, chat_id: int, message_id: int) -> bool:
+    try:
+        # Attempt to retrieve the message from the chat
+        message = await bot.get_chat(chat_id)
+        await bot.get_message(chat_id=chat_id, message_id=message_id)
+        return True  # Message is available
+    except exceptions.TelegramAPIError:
+        # An error indicates the message is not available
+        return False
