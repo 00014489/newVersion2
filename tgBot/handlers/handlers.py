@@ -52,7 +52,7 @@ async def format_column_namesForDatabase(input_string: str) -> str:
 async def cmd_start(message: Message):
     user_id = message.from_user.id
     userName = message.from_user.username
-    # await dataPostgres.insert_user_if_not_exists(user_id, userName)
+    await dataPostgres.insert_user_if_not_exists(user_id, userName)
      # Path to your image
     photo = FSInputFile("./tgBot/images/photo_2024-09-13_10-23-12.jpg")
     await message.answer_photo(
@@ -91,7 +91,7 @@ async def cmd_help(message: Message):
 
 @router.message(Command("Premium"))
 async def cmd_help(message: Message):
-    await message.answer("I am working on it")
+    await message.answer("Upgrade price for 30 days: $2.\n\nFeatures include:\n- Increased duration up to 10 minutes\n- Increased file size up to 25 MB\n- No advertisements\n\nTo get premium, please contact @haveNoIdeaYet.")
     # photo = FSInputFile("./deploymentbot/images/help.jpg")
     # Sending an image with text
     # First message with the main instructions and general information

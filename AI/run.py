@@ -48,9 +48,9 @@ def run_spleeter(wav_input_file, new_folder):
 
 def convert_accompaniment_to_mp3(accompaniment_file, new_folder, base_name, output_format='mp3'):
     """Convert the accompaniment (without vocals) to MP3 format synchronously."""
-    output_file = os.path.join(new_folder, f'{base_name}_minus_320k.{output_format}')
+    output_file = os.path.join(new_folder, f'{base_name}.{output_format}')
     process = subprocess.run(
-        ['ffmpeg', '-i', accompaniment_file, '-c:a', 'libmp3lame', '-b:a', '320k', output_file],
+        ['ffmpeg', '-i', accompaniment_file, '-c:a', 'libmp3lame', '-b:a', '192k', output_file],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
@@ -60,7 +60,7 @@ def convert_accompaniment_to_mp3(accompaniment_file, new_folder, base_name, outp
 
 def mix_vocals_and_accompaniment(accompaniment_file, vocals_file, vocal_percentage, new_folder, base_name, output_format='mp3'):
     """Mix vocals into the accompaniment file based on the vocal percentage and convert to MP3 format."""
-    output_file = os.path.join(new_folder, f'{base_name}_accompaniment_{vocal_percentage}percent_320k.{output_format}')
+    output_file = os.path.join(new_folder, f'{base_name}.{output_format}')
 
     vocal_volume = int(vocal_percentage) / 100.0
     accompaniment_volume = 1  # Full volume for accompaniment

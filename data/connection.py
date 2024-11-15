@@ -2,6 +2,7 @@ import psycopg
 from psycopg import sql
 import logging
 import psycopg2
+from datetime import datetime
 from aiogram.types import Message
 
 # Async connection creation for psycopg3
@@ -674,7 +675,7 @@ async def get_user_ids():
     """
     query = """
         SELECT user_id
-        FROM users;
+        FROM users WHERE status = 'ordinary';
     """
     
     conn = await get_db_connection()  # Assuming you have an async function to get DB connection
@@ -754,7 +755,7 @@ async def get_link_data(link: str) -> tuple[int, int] | None:
             # Query to get chat_id and message_id if the link exists
             await cur.execute(
                 """
-                SELECT id, chat_id, message_id FROM linksYou WHERE links = %s;
+                SELECT id, chatid, messageid FROM linksYou WHERE links = %s;
                 """,
                 (link,)  # Pass link as a tuple
             )
@@ -790,3 +791,133 @@ async def check_file_exists_order_true(url_id: str) -> bool:
         return False
     finally:
         await conn.close()  # Ensure the connection is closed
+
+
+async def get_chat_idBy_id(song_id: int):
+    """
+    Retrieves the id from the table based on the given file_id.
+
+    :param file_id: The file identifier to search for.
+    :return: The id associated with the given file_id, or None if not found.
+    """
+    query = """
+        SELECT chatid
+        FROM linksyou
+        WHERE id = %s;
+    """
+    
+    conn = await get_db_connection()  # Assuming you have an async function to get DB connection
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute(query, (song_id,))
+            result = await cur.fetchone()  # Fetch the first matching result
+            
+            if result:
+                return result[0]  # Return the id
+            else:
+                logging.info(f"No record found for file_id: {song_id}.")
+                return None
+    except Exception as e:
+        logging.error(f"Error retrieving id for file_id {song_id}: {e}")
+        return None
+    finally:
+        await conn.close()
+
+
+
+
+async def update_linksYou_message_id(id: int, message_id: int):
+    connection = await get_db_connection()
+    # out_column = f"out_{percent}_id"
+    try:
+        # Establish the async connection to the database
+        connection = await get_db_connection()
+
+        # Use async context manager with the connection cursor
+        async with connection.cursor() as cursor:
+            # Define the SQL command to update the language_id
+            query = f"""
+                UPDATE linksyou
+                SET messageid = %s
+                WHERE id = %s;
+            """
+            
+            # Execute the SQL command with parameters
+            await cursor.execute(query, (message_id, id))
+            
+            # Commit the transaction
+            await connection.commit()
+            print(f"Successfully updated links for id {id} value {message_id}.")
+
+    except (Exception, psycopg.Error) as error:
+        print("Error while updating:", error)
+    
+    finally:
+        if connection:
+            await connection.close()
+            print("PostgreSQL connection is closed")
+
+
+async def check_user_premium(user_id) -> bool:
+    conn = await get_db_connection()  # Assuming this function returns an async database connection
+    try:
+        async with conn.cursor() as cur:
+            # Query to check if a file with url_id exists in order_list and has status = TRUE
+            await cur.execute(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM users
+                    WHERE user_id = %s AND status = 'premium'
+                );
+                """,
+                (user_id,)
+            )
+            # Fetch the result and extract the boolean value
+            result = await cur.fetchone()
+            return result[0] if result else False
+    except Exception as e:
+        logging.error(f"Error checking file existence for url_id {user_id}: {e}")
+        return False
+    finally:
+        await conn.close()  # Ensure the connection is closed
+
+
+
+async def check_and_update_premium_status() -> None:
+    """
+    Check the `deadline_at` column and downgrade expired premium users to ordinary.
+    """
+    current_date = datetime.now()
+    query_select = """
+    SELECT user_id, deadline_at
+    FROM users
+    WHERE status = TRUE;
+    """
+    query_update = """
+    UPDATE users
+    SET status = FALSE
+    WHERE user_id = %s;
+    """
+    
+    conn = await get_db_connection()  # Get the async database connection
+    try:
+        async with conn.cursor() as cur:
+            # Fetch all premium users
+            await cur.execute(query_select)
+            users = await cur.fetchall()
+
+            # Check and update the status of each user
+            for user_id, deadline_at in users:
+                if deadline_at and deadline_at < current_date:
+                    # Downgrade to ordinary if the premium period has expired
+                    await cur.execute(query_update, (user_id,))
+                    logging.info(f"User {user_id} downgraded to ordinary.")
+            
+            # Commit changes to the database
+            await conn.commit()
+    except Exception as e:
+        logging.error(f"Error while checking/updating premium status: {e}")
+    finally:
+        # Ensure the connection is closed
+        await conn.close()

@@ -36,23 +36,6 @@ async def forward_message_to_user(bot: Bot, from_chat_id: int, message_id: int, 
     except Exception as e:
         logging.error(f"Error forwarding message: {e}")
 
-async def is_playlist_link(url):
-    if False: # for database
-        return True
-    else:    
-    # Parse the URL to check for a "list" parameter, indicating a playlist
-        parsed_url = urllib.parse.urlparse(url)
-        query_params = urllib.parse.parse_qs(parsed_url.query)
-        
-        # Check if 'list' parameter exists in the URL
-        if 'list' in query_params:
-            return True
-
-        # Optionally, verify URL content (e.g., some YouTube links may have "list" in other ways)
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                # Further checks could go here if needed, like inspecting response headers
-                return False
 def format_column_namesForDatabase(input_string: str):
     base_name, extension = os.path.splitext(input_string)
     cleaned_string = re.sub(r'[\'@()\-.]', '', base_name)
@@ -75,81 +58,20 @@ class MessageHandlerMiddleware(BaseMiddleware):
         if event.message:
             message = event.message  # Extract the Message object
             user_id = message.from_user.id
-            username = message.from_user.username
-            userPremium = True
+            if user_id < 0:
+                await message.reply("This bot in not for groups and channels!")
+                return await handler(event, data)
+            # username = message.from_user.username
             messageText = message.text
             if messageText and messageText.startswith("/"):
                 print("skiping the command")
                 return await handler(event, data)
             try:
-                if userPremium:
-                    if messageText is not None and ("youtube.com" in messageText or "youtu.be" in messageText):
-                        filtred = normalize_youtube_url(messageText.strip())
-                        if await dataPostgres.link_exists(filtred):
-                            duration = await dataPostgres.get_link_duration(filtred)
-                        else:
-                            duration = await get_audio_duration(filtred)
-                            await dataPostgres.insert_links(filtred, duration, user_id)
-                        if duration < 600:
-                            proccesing_messagee = await message.reply("Processing your YouTube audio...")
-                            id, chat_id, message_id = await dataPostgres.get_link_data(filtred)
-                            
-                            if message_id == 0:
-                                #cheking the order table exist or not
-                                while(True):
-                                    if await dataPostgres.check_file_exists_order_true(id):
-                                        await asyncio.sleep(15)
-                                    else:
-                                        await forward_message_to_user(bot, chat_id, message_id, user_id)
-                                        break
-                                
-                                # Process link
-
-                                await process_link(message)  # Placeholder for link processing logic
-                                
-                                # Update the chat_id and message_id in the database
-                                await update_message_record(chat_id, message_id)
-                                
-                            elif message_record is None:
-                                # Process link
-                                await process_link(message)  # Placeholder for link processing logic
-
-                                # Update the chat_id and message_id in the database
-                                await update_message_record(chat_id, message_id)
-                            
-                            
-                            if False: # if exist
-                                return
-                            else:
-                                try:
-                                    # Download audio from YouTube
-                                    mp3_path = await download_audio_from_youtube(filtred)
-                                    
-                                    # Send the downloaded audio file to the user
-                                    if os.path.exists(mp3_path):
-                                        audio_file = FSInputFile(mp3_path)
-                                        await message.answer_document(audio_file)
-                                        # Optionally, delete the file after sending
-                                        os.remove(mp3_path)
-                                        await proccesing_messagee.delete()
-                                    else:
-                                        await message.reply("Error: Could not find the downloaded file.")
-
-                                except Exception as e:
-                                    await message.reply(f"Error downloading audio: {e}")
-                                    print(f"Error: {e}")
-                        else:
-                             await message.reply("Your link out of limits. no more thant 10 minutes and no playlists.")
-                    elif message.audio:
-                        # await message.reply("geting a audio")
-                        await handle_audio_message(message)
-                    else:
-                        print(f"Unhandled message type from {username} (ID: {user_id})")
-                        await message.reply("Please send aduio of link of youtube")
-
-                    # Pass the event to the handler
-                    return await handler(event, data)
-
+                if await dataPostgres.check_user_premium(user_id):
+                    await main_fun_process(messageText, 600, 25, 10, user_id, message, bot, handler, event, data)
+                # elif 
+                else:
+                    await main_fun_process(messageText, 360, 15, 6, user_id, message, bot, handler, event, data)
             except Exception as e:
                 print(f"Error processing message: {e}")
         else:
@@ -164,7 +86,7 @@ class MessageHandlerMiddleware(BaseMiddleware):
         # Perform any actions you need with the text, like command handling, etc.
         await message.reply(f"Received your text message: {text}")
 
-async def handle_audio_message(message: Message):
+async def handle_audio_message(message: Message, file_size_lm: int, file_duration_lm):
     """
     Process audio files sent as audio (music).
     """
@@ -179,10 +101,10 @@ async def handle_audio_message(message: Message):
     file_duration = message.audio.duration / 60  # Convert duration to minutes
 
     # Validation: Check if the file is larger than 15 MB or longer than 6 minutes
-    if file_size > 15:
+    if file_size > file_size_lm:
         await message.reply(f"The song is too big ({file_size:.2f} MB). Please send a song smaller than 15 MB.")
         return
-    if file_duration > 6:
+    if file_duration > file_duration_lm:
         await message.reply(f"The song is too long ({file_duration:.2f} minutes). Please send a song shorter than 6 minutes.")
         return
 
@@ -208,3 +130,67 @@ async def is_message_available(bot: Bot, chat_id: int, message_id: int) -> bool:
     except exceptions.TelegramAPIError:
         # An error indicates the message is not available
         return False
+    
+
+
+
+async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int, file_duration_lm: int, user_id: int, message: Message, bot: Bot, handler, event, data):
+    if messageText is not None and ("youtube.com" in messageText or "youtu.be" in messageText):
+        filtred = normalize_youtube_url(messageText.strip())
+        # user_id = message.from_user.id
+        if await dataPostgres.link_exists(filtred):
+            duration = await dataPostgres.get_link_duration(filtred)
+        else:
+            duration = await get_audio_duration(filtred)
+            await dataPostgres.insert_links(filtred, duration, user_id)
+        if duration < duration_lm:
+            proccesing_messagee = await message.reply("Processing your YouTube audio...")
+            id, chat_id, message_id = await dataPostgres.get_link_data(filtred)
+            
+            if message_id == 0:
+                #cheking the order table exist or not
+                await asyncio.sleep(6)
+                while(True):
+                    if await dataPostgres.check_file_exists_order_true(id):
+                        await asyncio.sleep(10)
+                    else:
+                        await forward_message_to_user(bot, chat_id, message_id, user_id)
+                        await proccesing_messagee.delete()
+                        break
+                
+            else:
+                await forward_message_to_user(bot, chat_id, message_id, user_id)
+            
+        else:
+                await message.reply("Your link out of limits. no more thant 10 minutes and no playlists.")
+        
+    elif message.audio:
+        # await message.reply("geting a audio")
+        await handle_audio_message(message, file_size_lm, file_duration_lm)
+    else:
+        # print(f"Unhandled message type from {username} (ID: {user_id})")
+        await message.reply("Please send aduio of link of youtube")
+
+    # Pass the event to the handler
+    return await handler(event, data)
+
+# if False: # if exist
+#     return
+# else:
+#     try:
+#         # Download audio from YouTube
+#         mp3_path = await download_audio_from_youtube(filtred)
+        
+#         # Send the downloaded audio file to the user
+#         if os.path.exists(mp3_path):
+#             audio_file = FSInputFile(mp3_path)
+#             await message.answer_document(audio_file)
+#             # Optionally, delete the file after sending
+#             os.remove(mp3_path)
+#             await proccesing_messagee.delete()
+#         else:
+#             await message.reply("Error: Could not find the downloaded file.")
+
+#     except Exception as e:
+#         await message.reply(f"Error downloading audio: {e}")
+#         print(f"Error: {e}")
