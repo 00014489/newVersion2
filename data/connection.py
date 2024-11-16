@@ -1,9 +1,10 @@
 import psycopg
 from psycopg import sql
 import logging
+from typing import Tuple, Union
 import psycopg2
 from datetime import datetime
-from aiogram.types import Message
+# from aiogram.types import Message
 
 # Async connection creation for psycopg3
 async def get_db_connection():
@@ -149,25 +150,25 @@ async def get_id_by_message_id(record_id: int, vocal_percentage: int):
         await conn.close()
 
 
-async def insert_into_links(user_id: int, link: str, message: Message):
-    message_id = message.message_id
-    conn = await get_db_connection()  # Assuming you have get_db_connection() defined
-    try:
-        async with conn.cursor() as cur:
-            # Insert into the input_file table
-            await cur.execute(
-                """
-                INSERT INTO user_links (user_id, link, message_id)
-                VALUES (%s, %s, %s);
-                """,
-                (user_id, link, message_id)
-            )
-            await conn.commit()  # Commit the transaction to save the data
-            logging.info(f"Inserted into input_file: file_id={link}")
-    except Exception as e:
-        logging.error(f"Error inserting into input_file: {e}")
-    finally:
-        await conn.close()  # Ensure the connection is closed
+# async def insert_into_links(user_id: int, link: str, message: Message):
+#     message_id = message.message_id
+#     conn = await get_db_connection()  # Assuming you have get_db_connection() defined
+#     try:
+#         async with conn.cursor() as cur:
+#             # Insert into the input_file table
+#             await cur.execute(
+#                 """
+#                 INSERT INTO user_links (user_id, link, message_id)
+#                 VALUES (%s, %s, %s);
+#                 """,
+#                 (user_id, link, message_id)
+#             )
+#             await conn.commit()  # Commit the transaction to save the data
+#             logging.info(f"Inserted into input_file: file_id={link}")
+#     except Exception as e:
+#         logging.error(f"Error inserting into input_file: {e}")
+#     finally:
+#         await conn.close()  # Ensure the connection is closed
 
 async def link_exists(link: str) -> bool:
     conn = await get_db_connection()  # Assuming you have get_db_connection() defined
@@ -215,31 +216,31 @@ async def link_exists(link: str) -> bool:
 #         await conn.close()  # Ensure the connection is closed
 
 
-async def get_user_id_and_message_id(link: str):
-    conn = await get_db_connection()  # Assuming you have get_db_connection() defined
-    try:
-        async with conn.cursor() as cur:
-            # Query to get user_id and message_id for the specified link
-            await cur.execute(
-                """
-                SELECT user_id, message_id 
-                FROM user_links 
-                WHERE link = %s;
-                """,
-                (link,)  # Pass link as a tuple
-            )
-            # Fetch the result, which will be a tuple (user_id, message_id)
-            result = await cur.fetchone()
-            if result:
-                user_id, message_id = result
-                return user_id, message_id  # Return both user_id and message_id
-            else:
-                return None, None  # Return None if no result found
-    except Exception as e:
-        logging.error(f"Error fetching user_id and message_id: {e}")
-        return None, None  # Return None in case of error
-    finally:
-        await conn.close()  # Ensure the connection is closed
+# async def get_user_id_and_message_id(link: str):
+#     conn = await get_db_connection()  # Assuming you have get_db_connection() defined
+#     try:
+#         async with conn.cursor() as cur:
+#             # Query to get user_id and message_id for the specified link
+#             await cur.execute(
+#                 """
+#                 SELECT user_id, message_id 
+#                 FROM user_links 
+#                 WHERE link = %s;
+#                 """,
+#                 (link,)  # Pass link as a tuple
+#             )
+#             # Fetch the result, which will be a tuple (user_id, message_id)
+#             result = await cur.fetchone()
+#             if result:
+#                 user_id, message_id = result
+#                 return user_id, message_id  # Return both user_id and message_id
+#             else:
+#                 return None, None  # Return None if no result found
+#     except Exception as e:
+#         logging.error(f"Error fetching user_id and message_id: {e}")
+#         return None, None  # Return None in case of error
+#     finally:
+#         await conn.close()  # Ensure the connection is closed
 
 # async def update_message_id_by_link(message: Message, link: str):
 #     message_id = message.message_id
@@ -433,7 +434,7 @@ def get_name_by_songId(id: int) -> str:
         with conn.cursor() as cur:
             # Execute a query to fetch the file_name for the given file_id
             query = """
-                SELECT file_name
+                SELECT file_name, file_name_original
                 FROM input_file
                 WHERE id = %s;
             """
@@ -443,7 +444,7 @@ def get_name_by_songId(id: int) -> str:
             result = cur.fetchone()
 
             # Return the file_name if found, or None if not found
-            return result[0] if result else None
+            return result if result else None
     except Exception as e:
         logging.error(f"Error fetching file_name for file_id {id}: {e}")
         return None  # Return None in case of any error
@@ -727,7 +728,7 @@ async def insert_links(url: str, duration: int, user_id : int):
         await conn.close()
 
 
-async def get_link_duration(link: str) -> int | None:
+async def get_link_duration(link: str):
     conn = await get_db_connection()  # Assuming you have get_db_connection() defined
     try:
         async with conn.cursor() as cur:
@@ -748,7 +749,7 @@ async def get_link_duration(link: str) -> int | None:
         await conn.close()
 
 
-async def get_link_data(link: str) -> tuple[int, int] | None:
+async def get_link_data(link: str) -> Union[Tuple[int, int], None]:
     conn = await get_db_connection()  # Assuming you have get_db_connection() defined
     try:
         async with conn.cursor() as cur:
@@ -868,7 +869,7 @@ async def check_user_premium(user_id) -> bool:
                 SELECT EXISTS (
                     SELECT 1
                     FROM users
-                    WHERE user_id = %s AND status = 'premium'
+                    WHERE user_id = %s AND status = TRUE
                 );
                 """,
                 (user_id,)
@@ -921,3 +922,111 @@ async def check_and_update_premium_status() -> None:
     finally:
         # Ensure the connection is closed
         await conn.close()
+
+async def get_url_By_id(song_id: int):
+    """
+    Retrieves the id from the table based on the given file_id.
+
+    :param file_id: The file identifier to search for.
+    :return: The id associated with the given file_id, or None if not found.
+    """
+    query = """
+        SELECT links
+        FROM linksyou
+        WHERE id = %s;
+    """
+    
+    conn = await get_db_connection()  # Assuming you have an async function to get DB connection
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute(query, (song_id,))
+            result = await cur.fetchone()  # Fetch the first matching result
+            
+            if result:
+                return result[0]  # Return the id
+            else:
+                logging.info(f"No record found for file_id: {song_id}.")
+                return None
+    except Exception as e:
+        logging.error(f"Error retrieving id for file_id {song_id}: {e}")
+        return None
+    finally:
+        await conn.close()
+
+
+async def insert_into_order_list(url_id: int):
+    conn = await get_db_connection()  # Assuming you have get_db_connection() defined
+    try:
+        async with conn.cursor() as cur:
+            # Insert into the input_file table
+            await cur.execute(
+                """
+                INSERT INTO order_list (url_id)
+                VALUES (%s);
+                """,
+                (url_id)
+            )
+            await conn.commit()  # Commit the transaction to save the data
+            logging.info(f"Inserted into input_file: file_id={url_id}")
+    except Exception as e:
+        logging.error(f"Error inserting into input_file: {e}")
+    finally:
+        await conn.close()  # Ensure the connection is closed
+
+
+async def get_url_ids_status_true():
+    """
+    Retrieves the list of url_ids from the 'order_list' table where status is TRUE.
+
+    :return: A list of url_ids or an empty list if no matches are found.
+    """
+    query = """
+        SELECT url_id
+        FROM order_list
+        WHERE status = TRUE;
+    """
+
+    conn = await get_db_connection()  # Your async function to get the psycopg3 connection
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute(query)
+            result = await cur.fetchall()  # Fetch all matching rows
+            # Extract url_id from each row and return as a list
+            url_ids = [row[0] for row in result]
+            return url_ids
+    except Exception as e:
+        logging.error(f"Error retrieving url_ids: {e}")
+        return []
+    finally:
+        await conn.close()
+
+async def update_order_list_false(id: int):
+    connection = await get_db_connection()
+    # out_column = f"out_{percent}_id"
+    try:
+        # Establish the async connection to the database
+        connection = await get_db_connection()
+
+        # Use async context manager with the connection cursor
+        async with connection.cursor() as cursor:
+            # Define the SQL command to update the language_id
+            query = f"""
+                UPDATE order_list
+                SET status = FASLE
+                WHERE url_id = %s;
+            """
+            
+            # Execute the SQL command with parameters
+            await cursor.execute(query, (id))
+            
+            # Commit the transaction
+            await connection.commit()
+            print(f"Successfully updated oder_list for id {id} to FALSE.")
+
+    except (Exception, psycopg.Error) as error:
+        print("Error while updating:", error)
+    
+    finally:
+        if connection:
+            await connection.close()
+            print("PostgreSQL connection is closed")

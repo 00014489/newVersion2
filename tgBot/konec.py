@@ -135,7 +135,7 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
     send_songs_pattern = r"^sendSongs(\d+):(\d+):(\d+)$"
     down_folder_pattern = r"^down(\d+)$"
     base_path = Path(base_dir)
-    found_matching_folders = []
+    # found_matching_folders = []
 
     # Use ThreadPoolExecutor for I/O bound directory and file checking
     with ThreadPoolExecutor() as pool:
@@ -163,6 +163,7 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
 
                                 file_id = await dataPostgres.get_file_id_by_id(song_id_send)
                                 await dataPostgres.update_out_id_by_percent(file_id, id, vocal_percentage)
+                                await deleting_folder(f"sendSongs{vocal_percentage}:{song_id_send}:{user_id}")
 
                             except TelegramBadRequest as e:
                                 logging.error(f"Failed to send audio for song_id {song_id_send}: {e}")
@@ -191,7 +192,7 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
                                 # id = await track_message(sendFile, vocal_percentage)
                                 # logging.info(f"Message ID is {sendFile.message_id}")
                                 await dataPostgres.update_linksYou_message_id(song_id, downFile.message_id)
-
+                                await deleting_folder(f"down{song_id}")
                                 # file_id = await dataPostgres.get_file_id_by_id(song_id)
                                 # await dataPostgres.update_out_id_by_percent(file_id, id, vocal_percentage)
 
@@ -262,3 +263,11 @@ async def schedule_daily_task():
 
     # Keep the scheduler running
     await asyncio.Event().wait()
+
+async def deleting_folder(folder_path):
+    try:
+        shutil.rmtree(folder_path)
+        logging.info(f"Deleted folder: {folder_path}")
+    except Exception as e:
+        logging.error(f"Failed to delete folder {folder_path}: {e}")
+        # await bot.send_message(chat_id=user_id, text="Please try again.")

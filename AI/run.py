@@ -6,6 +6,7 @@ import gc
 import subprocess
 from spleeter.separator import Separator
 import tensorflow as tf
+from pathlib import Path
 import shutil
 # import data.connection as dataPostgres
 
@@ -24,8 +25,10 @@ except RuntimeError as e:
 # Enable eager execution for TensorFlow
 tf.config.run_functions_eagerly(True)
 
-def convert_to_wav(input_file, new_folder, base_name):
+def convert_to_wav(file_input, new_folder, base_name):
+    input_file = f"./{file_input}"
     """Convert the input file to WAV format synchronously."""
+    logging.info(f"datas base name = {base_name}, output {new_folder}, input_file = {input_file}")
     wav_input_file = os.path.join(new_folder, f'{base_name}.wav')
     process = subprocess.run(
         ['ffmpeg', '-i', input_file, wav_input_file],
@@ -48,7 +51,7 @@ def run_spleeter(wav_input_file, new_folder):
 
 def convert_accompaniment_to_mp3(accompaniment_file, new_folder, base_name, output_format='mp3'):
     """Convert the accompaniment (without vocals) to MP3 format synchronously."""
-    output_file = os.path.join(new_folder, f'{base_name}.{output_format}')
+    output_file = os.path.join(new_folder, f'{base_name}_0_MG.{output_format}')
     process = subprocess.run(
         ['ffmpeg', '-i', accompaniment_file, '-c:a', 'libmp3lame', '-b:a', '192k', output_file],
         stdout=subprocess.PIPE,
@@ -60,7 +63,7 @@ def convert_accompaniment_to_mp3(accompaniment_file, new_folder, base_name, outp
 
 def mix_vocals_and_accompaniment(accompaniment_file, vocals_file, vocal_percentage, new_folder, base_name, output_format='mp3'):
     """Mix vocals into the accompaniment file based on the vocal percentage and convert to MP3 format."""
-    output_file = os.path.join(new_folder, f'{base_name}.{output_format}')
+    output_file = os.path.join(new_folder, f'{base_name}_{vocal_percentage}_MG.{output_format}')
 
     vocal_volume = int(vocal_percentage) / 100.0
     accompaniment_volume = 1  # Full volume for accompaniment
@@ -84,51 +87,101 @@ def mix_vocals_and_accompaniment(accompaniment_file, vocals_file, vocal_percenta
 
     return output_file
 
-def process_audio_file(vocal_percentage: int, id_input: int, user_id: int, output_format='mp3'):
+# def process_audio_file(vocal_percentage: int, id_input: int, user_id: int, file_path: str, output_format='mp3'):
+#     """Process audio file with specified vocal percentage mixed into accompaniment."""
+#     start_time = time.time()
+#     input_name = dataPostgres.get_name_by_songId(id_input)  # Assuming this is a synchronous call
+#     save_directory = f'./inputSongs{vocal_percentage}:{id_input}:{user_id}'
+#     # os.makedirs(save_directory, exist_ok=True)
+#     logging.info(f"This is the ID of the song {id_input}")
+
+#     # if not isinstance(input_name, str) or not input_name:
+#     #     raise ValueError("Invalid input_name provided. It must be a non-empty string.")
+
+#     # file_path = os.path.join(save_directory, str(input_name))
+#     logging.info(f"Starting to process audio file: {input_name} with vocal percentage: {vocal_percentage}%")
+
+#     input_dir = os.path.dirname(file_path)
+#     base_name, input_ext = os.path.splitext(os.path.basename(input_name))
+
+#     # if extensions is None:
+#     extensions = ['.mp3', '.wav', '.flac', '.aac', '.m4a']
+    
+#     input_dir = Path(input_dir)  # Convert to Path object
+#     files_in_folder = list(input_dir.glob(f"{base_name}*"))  # Find all files with the base name
+    
+#     for file_path in files_in_folder:
+#         if file_path.suffix in extensions and file_path.is_file():
+#             return file_path  # Return the first matching file
+        
+#     if file_path is None:
+#         raise FileNotFoundError(f"No audio file found for base name: {base_name}")
+
+#     output_directory = f'./sendSongs{vocal_percentage}:{id_input}:{user_id}'
+#     os.makedirs(output_directory, exist_ok=True)  # Create the output directory
+
+#     if not file_path.endswith('.wav'):
+#         wav_input_file = convert_to_wav(file_path, output_directory, base_name)
+#     else:
+#         wav_input_file = file_path
+
+#     logging.info(f"Starting Spleeter separation for {wav_input_file}")
+#     run_spleeter(wav_input_file, output_directory)
+#     logging.info(f"Completed Spleeter separation for {wav_input_file}")
+
+#     accompaniment_file = os.path.join(output_directory, base_name, 'accompaniment.wav')
+#     vocals_file = os.path.join(output_directory, base_name, 'vocals.wav')
+
+#     if not os.path.exists(accompaniment_file):
+#         raise FileNotFoundError(f"Accompaniment file {accompaniment_file} does not exist.")
+#     if int(vocal_percentage) > 0 and not os.path.exists(vocals_file):
+#         raise FileNotFoundError(f"Vocal file {vocals_file} does not exist.")
+
+#     logging.info(f"Mixing with vocal percentage: {vocal_percentage}%")
+
+#     if int(vocal_percentage) == 0:
+#         convert_accompaniment_to_mp3(accompaniment_file, output_directory, base_name, output_format)
+#     else:
+#         mix_vocals_and_accompaniment(accompaniment_file, vocals_file, vocal_percentage, output_directory, base_name, output_format)
+
+
+#     # Clean up intermediate files
+#     os.remove(accompaniment_file)
+#     if file_path != wav_input_file:
+#         os.remove(wav_input_file)
+
+#     elapsed_time = time.time() - start_time
+#     logging.info(f"Processing completed in {elapsed_time:.2f} seconds.")
+
+#     # Remove the save_directory folder and its contents
+#     shutil.rmtree(save_directory, ignore_errors=True)
+#     logging.info(f"Deleted temporary directory: {save_directory}")
+#     gc.collect()
+    
+
+def process_audio_file(vocal_percentage: int, id_input: int, user_id: int, file_path: str, output_format='mp3'):
     """Process audio file with specified vocal percentage mixed into accompaniment."""
     start_time = time.time()
-    input_name = dataPostgres.get_name_by_songId(id_input)  # Assuming this is a synchronous call
-    save_directory = f'./inputSongs{vocal_percentage}:{id_input}:{user_id}'
-    os.makedirs(save_directory, exist_ok=True)
-    logging.info(f"This is the ID of the song {id_input}")
-
-    if not isinstance(input_name, str) or not input_name:
-        raise ValueError("Invalid input_name provided. It must be a non-empty string.")
-
-    file_path = os.path.join(save_directory, str(input_name))
-    logging.info(f"Starting to process audio file: {input_name} with vocal percentage: {vocal_percentage}%")
-
-    input_dir = os.path.dirname(file_path)
-    base_name, input_ext = os.path.splitext(os.path.basename(input_name))
-
-    extensions = ['.mp3', '.wav', '.flac', '.aac', '.m4a']
-    input_file = None
-    if input_ext in extensions and os.path.exists(input_name):
-        input_file = input_name
-    else:
-        for ext in extensions:
-            possible_file = os.path.join(input_dir, f"{base_name}{ext}")
-            if os.path.exists(possible_file):
-                input_file = possible_file
-                break
+    name_inTable, input_name = dataPostgres.get_name_by_songId(id_input)  # Assuming this is a synchronous call
     
-    if input_file is None:
-        raise FileNotFoundError(f"No audio file found for base name: {base_name}")
+    if file_path is None:
+        raise FileNotFoundError(f"No audio file found for base name: {input_name}")
 
     output_directory = f'./sendSongs{vocal_percentage}:{id_input}:{user_id}'
     os.makedirs(output_directory, exist_ok=True)  # Create the output directory
 
-    if not input_file.endswith('.wav'):
-        wav_input_file = convert_to_wav(input_file, output_directory, base_name)
+    if not str(name_inTable).endswith('.wav'):
+        logging.info("we are here mf")
+        wav_input_file = convert_to_wav(file_path, output_directory, input_name)
     else:
-        wav_input_file = input_file
+        wav_input_file = file_path
 
     logging.info(f"Starting Spleeter separation for {wav_input_file}")
     run_spleeter(wav_input_file, output_directory)
     logging.info(f"Completed Spleeter separation for {wav_input_file}")
 
-    accompaniment_file = os.path.join(output_directory, base_name, 'accompaniment.wav')
-    vocals_file = os.path.join(output_directory, base_name, 'vocals.wav')
+    accompaniment_file = os.path.join(output_directory, input_name, 'accompaniment.wav')
+    vocals_file = os.path.join(output_directory, input_name, 'vocals.wav')
 
     if not os.path.exists(accompaniment_file):
         raise FileNotFoundError(f"Accompaniment file {accompaniment_file} does not exist.")
@@ -138,21 +191,20 @@ def process_audio_file(vocal_percentage: int, id_input: int, user_id: int, outpu
     logging.info(f"Mixing with vocal percentage: {vocal_percentage}%")
 
     if int(vocal_percentage) == 0:
-        convert_accompaniment_to_mp3(accompaniment_file, output_directory, base_name, output_format)
+        convert_accompaniment_to_mp3(accompaniment_file, output_directory, input_name, output_format)
     else:
-        mix_vocals_and_accompaniment(accompaniment_file, vocals_file, vocal_percentage, output_directory, base_name, output_format)
+        mix_vocals_and_accompaniment(accompaniment_file, vocals_file, vocal_percentage, output_directory, input_name, output_format)
 
 
     # Clean up intermediate files
     os.remove(accompaniment_file)
-    if input_file != wav_input_file:
+    if file_path != wav_input_file:
         os.remove(wav_input_file)
 
     elapsed_time = time.time() - start_time
     logging.info(f"Processing completed in {elapsed_time:.2f} seconds.")
-
+    save_directory = f'./inputSongs{vocal_percentage}:{id_input}:{user_id}'
     # Remove the save_directory folder and its contents
     shutil.rmtree(save_directory, ignore_errors=True)
     logging.info(f"Deleted temporary directory: {save_directory}")
     gc.collect()
-    

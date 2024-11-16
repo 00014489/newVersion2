@@ -25,7 +25,7 @@ async def main():
     asyncio.create_task(run_task_send("./", bot))
     asyncio.create_task(schedule_daily_task())
     
-    await asyncio.Event().wait()
+    # await asyncio.Event().wait()
 
     try:
         # Start polling

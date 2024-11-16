@@ -1,7 +1,12 @@
 import yt_dlp
 import os
+import data.connection as dataPostgres
 
-async def download_audio_from_youtube(url, output_path="downloads"):
+async def download_audio_from_youtube(id):
+    url = await dataPostgres.get_url_By_id(id)
+    output_path = f"down{id}"
+    await dataPostgres.insert_into_order_list(id)
+    
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': f'{output_path}/%(title)s.%(ext)s',
