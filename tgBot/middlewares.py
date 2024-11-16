@@ -110,7 +110,8 @@ async def handle_audio_message(message: Message, file_size_lm: int, file_duratio
 
     if not await dataPostgres.check_file_exists(file_id):
         # Get the file name without the extension
-        file_name_without_extension = os.path.splitext(file_name)[0]
+        file_name_without_extension = get_file_name_without_extension(file_name)
+        logging.info(f"File name {file_name_without_extension}")
         
         # Insert into the database with the file name without the extension
         await dataPostgres.insert_into_input_file(file_id, format_column_namesForDatabase(file_name), file_name_without_extension)
@@ -132,7 +133,14 @@ async def is_message_available(bot: Bot, chat_id: int, message_id: int) -> bool:
         return False
     
 
-
+def get_file_name_without_extension(file_name: str) -> str:
+    # Check if the last 4 characters contain an extension
+    if len(file_name) > 4 and file_name[-4] == '.':
+        # Return the string without the last 4 characters (extension)
+        return file_name[:-4]
+    else:
+        # No extension, return the string as is
+        return file_name    
 
 async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int, file_duration_lm: int, user_id: int, message: Message, bot: Bot, handler, event, data):
     if messageText is not None and ("youtube.com" in messageText or "youtu.be" in messageText):

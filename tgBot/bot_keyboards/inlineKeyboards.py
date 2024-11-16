@@ -15,7 +15,7 @@ async def percent_choose(file_id: str):
     # Add two buttons: one for 0% vocals and one for 15% vocals
     keyboard.add(
         InlineKeyboardButton(text="50%", callback_data=f"mix_vocals:{id}:50"),
-        InlineKeyboardButton(text="75%", callback_data=f"mix_vocals:{id}:15"),
+        InlineKeyboardButton(text="85%", callback_data=f"mix_vocals:{id}:15"),
         InlineKeyboardButton(text="100%", callback_data=f"mix_vocals:{id}:0")
     )
 
