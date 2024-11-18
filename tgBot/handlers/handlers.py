@@ -60,11 +60,11 @@ async def cmd_start(message: Message):
         caption=(
         "Welcome to MinusGolos bot\n\n"
         "Send a audio file and get minus of sended audio file\n\n"
-        f"  U can choose for returning the output with 0% vocal or 15% or 50%.\n\n"
-        f"      Press 0% if u want to get only the minus of song\n"
-        f"      Press 15% if u want to get audio with a little vocal\n"
-        f"      Press 50% if you want to get audio with 50% of the vocal sound\n\n\n"
-        f"Send a link of file from YouTube and get mp3 file\n\n"
+        f"U can choose for returning the output with 0% vocal or 15% or 50%.\n\n"
+        f"Press 0% if u want to get only the minus of song\n"
+        f"Press 15% if u want to get audio with a little vocal\n"
+        f"Press 50% if you want to get audio with 50% of the vocal sound\n\n\n"
+        f"Send a link of video from YouTube and get mp3 file\n\n"
         "Great point, Day by day the bot will become faster"),
         reply_markup=kb.main)
     
@@ -92,22 +92,7 @@ async def cmd_help(message: Message):
 @router.message(Command("Premium"))
 async def cmd_help(message: Message):
     await message.answer("Upgrade price for 30 days: $2.\n\nFeatures include:\n- Increased duration up to 10 minutes\n- Increased file size up to 25 MB\n- No advertisements\n\nTo get premium, please contact @haveNoIdeaYet.")
-    # photo = FSInputFile("./deploymentbot/images/help.jpg")
-    # Sending an image with text
-    # First message with the main instructions and general information
-    # await message.answer_photo(
-    #     photo,
-    #     caption=(
-    #         f"Send song and get a minus of song\n\n"
-    #         f"0% button - it is button for getting the 0% vocal audio file\n"
-    #         f"15% button - it is button for getting the audio with 15% vocal volume for better quality\n"
-    #         f"50% button - it is button for getting the audio with 50% vocal volume for better melody\n"
-    #         "If u get error that process is too long please try again\n\n"
-    #         "Do not forget. Day by day the bot will become more and more faster\n"
-    #         "U can check it by practicing ...\n\n"
-    #         "If u have technical problems. U can contact admin"
-            
-    # ))
+
 
 
 

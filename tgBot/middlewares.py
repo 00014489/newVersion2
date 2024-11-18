@@ -102,10 +102,10 @@ async def handle_audio_message(message: Message, file_size_lm: int, file_duratio
 
     # Validation: Check if the file is larger than 15 MB or longer than 6 minutes
     if file_size > file_size_lm:
-        await message.reply(f"The song is too big ({file_size:.2f} MB). Please send a song smaller than 15 MB.")
+        await message.reply(f"The song is too big ({file_size:.2f} MB). Please send a song in limits.\n\nLimits: Oridnary users -> Max 15 MB.\nPremium users -> Max 25 MB.")
         return
     if file_duration > file_duration_lm:
-        await message.reply(f"The song is too long ({file_duration:.2f} minutes). Please send a song shorter than 6 minutes.")
+        await message.reply(f"The song is too long ({file_duration:.2f} minutes). Please send a song in limits.\n\nLimits: Oridnary users -> Max 6 minutes.\nPremium users -> Max 10 minutes.")
         return
 
     if not await dataPostgres.check_file_exists(file_id):
@@ -145,6 +145,7 @@ def get_file_name_without_extension(file_name: str) -> str:
 async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int, file_duration_lm: int, user_id: int, message: Message, bot: Bot, handler, event, data):
     if messageText is not None and ("youtube.com" in messageText or "youtu.be" in messageText):
         filtred = normalize_youtube_url(messageText.strip())
+        pleaseReply = await message.reply("Please wait...")
         # user_id = message.from_user.id
         if await dataPostgres.link_exists(filtred):
             duration = await dataPostgres.get_link_duration(filtred)
@@ -152,8 +153,9 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
             duration = await get_audio_duration(filtred)
             await dataPostgres.insert_links(filtred, duration, user_id)
         id = await dataPostgres.get_id_byUrl(filtred)
+        await pleaseReply.delete()
         if duration < duration_lm:
-            proccesing_messagee = await message.reply("Processing your YouTube audio...")
+            # proccesing_messagee = await message.reply("Processing your YouTube audio...")
             
 
             #checking the file exist on order_list
@@ -164,7 +166,8 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
                     else:
                         chat_id, message_id = await dataPostgres.get_link_data(filtred)
                         await forward_message_to_user(bot, chat_id, message_id, user_id)
-                        await proccesing_messagee.delete()
+                        # await proccesing_messagee.delete()
+                        await pleaseReply.delete()
                         break
             else:
                 await dataPostgres.insert_into_order_list(id)
@@ -188,7 +191,7 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
             #     await forward_message_to_user(bot, chat_id, message_id, user_id)
             
         else:
-                await message.reply("Your link out of limits. no more thant 10 minutes and no playlists.")
+                await message.reply("Your link out of limits. \n\nLimits:\nOridinary users -> Max 6 minutesno\nPremium users -> Max 10 minuts.")
         
     elif message.audio:
         # await message.reply("geting a audio")

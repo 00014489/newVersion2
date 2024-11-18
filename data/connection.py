@@ -968,12 +968,42 @@ async def check_and_update_premium_status() -> None:
         # Ensure the connection is closed
         await conn.close()
 
-async def get_url_By_id(song_id: int):
-    """
-    Retrieves the id from the table based on the given file_id.
+# async def get_url_By_id(song_id: int):
+#     """
+#     Retrieves the id from the table based on the given file_id.
 
-    :param file_id: The file identifier to search for.
-    :return: The id associated with the given file_id, or None if not found.
+#     :param file_id: The file identifier to search for.
+#     :return: The id associated with the given file_id, or None if not found.
+#     """
+#     query = """
+#         SELECT links
+#         FROM linksyou
+#         WHERE id = %s;
+#     """
+    
+#     conn = await get_db_connection()  # Assuming you have an async function to get DB connection
+#     try:
+#         async with conn.cursor() as cur:
+#             await cur.execute(query, (song_id,))
+#             result = await cur.fetchone()  # Fetch the first matching result
+            
+#             if result:
+#                 return result[0]  # Return the id
+#             else:
+#                 logging.info(f"No record found for file_id: {song_id}.")
+#                 return None
+#     except Exception as e:
+#         logging.error(f"Error retrieving id for file_id {song_id}: {e}")
+#         return None
+#     finally:
+#         await conn.close()
+
+def get_url_By_id(song_id: int):
+    """
+    Retrieves the URL from the table based on the given song_id.
+
+    :param song_id: The song identifier to search for.
+    :return: The URL associated with the given song_id, or None if not found.
     """
     query = """
         SELECT links
@@ -981,22 +1011,24 @@ async def get_url_By_id(song_id: int):
         WHERE id = %s;
     """
     
-    conn = await get_db_connection()  # Assuming you have an async function to get DB connection
     try:
-        async with conn.cursor() as cur:
-            await cur.execute(query, (song_id,))
-            result = await cur.fetchone()  # Fetch the first matching result
+        # Establish a synchronous database connection
+        conn = get_db_connection_sync()
+        with conn.cursor() as cur:
+            cur.execute(query, (song_id,))
+            result = cur.fetchone()  # Fetch the first matching result
             
             if result:
-                return result[0]  # Return the id
+                return result[0]  # Return the URL
             else:
-                logging.info(f"No record found for file_id: {song_id}.")
+                logging.info(f"No record found for song_id: {song_id}.")
                 return None
     except Exception as e:
-        logging.error(f"Error retrieving id for file_id {song_id}: {e}")
+        logging.error(f"Error retrieving URL for song_id {song_id}: {e}")
         return None
     finally:
-        await conn.close()
+        if conn:
+            conn.close()  # Ensure the connection is closed
 
 
 async def insert_into_order_list(url_id: int):

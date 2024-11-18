@@ -16,7 +16,7 @@ async def process_url():
         for url in urls:
             try:
                 logging.info(f"Processing URL: {url}")
-                await download_audio_from_youtube(url)
+                download_audio_from_youtube(url)
                 await dataPostgres.update_order_list_false(url)
             except Exception as e:
                 logging.error(f"Error processing URL {url}: {e}")
