@@ -171,7 +171,7 @@ def process_audio_file(vocal_percentage: int, id_input: int, user_id: int, file_
     os.makedirs(output_directory, exist_ok=True)  # Create the output directory
 
     if not str(name_inTable).endswith('.wav'):
-        logging.info("we are here mf")
+        # logging.info("we are here mf")
         wav_input_file = convert_to_wav(file_path, output_directory, input_name)
     else:
         wav_input_file = file_path

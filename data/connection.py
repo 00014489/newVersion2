@@ -756,13 +756,34 @@ async def get_link_data(link: str) -> Union[Tuple[int, int], None]:
             # Query to get chat_id and message_id if the link exists
             await cur.execute(
                 """
-                SELECT id, chatid, messageid FROM linksYou WHERE links = %s;
+                SELECT chatid, messageid FROM linksYou WHERE links = %s;
                 """,
                 (link,)  # Pass link as a tuple
             )
             # Fetch the result, which will be a single row if the link exists
             result = await cur.fetchone()
-            return (result[0], result[1], result[2]) if result else None  # Return chat_id and message_id if found, else None
+            return (result[0], result[1]) if result else None  # Return chat_id and message_id if found, else None
+    except Exception as e:
+        logging.error(f"Error retrieving link data: {e}")
+        return None  # Return None in case of error
+    finally:
+        await conn.close()
+
+
+async def get_id_byUrl(link: str) -> Union[Tuple[int, int], None]:
+    conn = await get_db_connection()  # Assuming you have get_db_connection() defined
+    try:
+        async with conn.cursor() as cur:
+            # Query to get chat_id and message_id if the link exists
+            await cur.execute(
+                """
+                SELECT id FROM linksYou WHERE links = %s;
+                """,
+                (link,)  # Pass link as a tuple
+            )
+            # Fetch the result, which will be a single row if the link exists
+            result = await cur.fetchone()
+            return result[0] if result else None  # Return chat_id and message_id if found, else None
     except Exception as e:
         logging.error(f"Error retrieving link data: {e}")
         return None  # Return None in case of error
@@ -780,6 +801,30 @@ async def check_file_exists_order_true(url_id: str) -> bool:
                     SELECT 1
                     FROM order_list
                     WHERE url_id = %s AND status = TRUE
+                );
+                """,
+                (url_id,)
+            )
+            # Fetch the result and extract the boolean value
+            result = await cur.fetchone()
+            return result[0] if result else False
+    except Exception as e:
+        logging.error(f"Error checking file existence for url_id {url_id}: {e}")
+        return False
+    finally:
+        await conn.close()  # Ensure the connection is closed
+
+async def check_file_exists_order(url_id: str) -> bool:
+    conn = await get_db_connection()  # Assuming this function returns an async database connection
+    try:
+        async with conn.cursor() as cur:
+            # Query to check if a file with url_id exists in order_list and has status = TRUE
+            await cur.execute(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM order_list
+                    WHERE url_id = %s
                 );
                 """,
                 (url_id,)
@@ -964,12 +1009,12 @@ async def insert_into_order_list(url_id: int):
                 INSERT INTO order_list (url_id)
                 VALUES (%s);
                 """,
-                (url_id)
+                (url_id,)
             )
             await conn.commit()  # Commit the transaction to save the data
-            logging.info(f"Inserted into input_file: file_id={url_id}")
+            logging.info(f"Inserted into order_list: url_id={url_id}")
     except Exception as e:
-        logging.error(f"Error inserting into input_file: {e}")
+        logging.error(f"Error inserting into order_list: {e}")
     finally:
         await conn.close()  # Ensure the connection is closed
 
@@ -1000,33 +1045,33 @@ async def get_url_ids_status_true():
     finally:
         await conn.close()
 
+
 async def update_order_list_false(id: int):
-    connection = await get_db_connection()
-    # out_column = f"out_{percent}_id"
+    connection = None
     try:
         # Establish the async connection to the database
         connection = await get_db_connection()
 
         # Use async context manager with the connection cursor
         async with connection.cursor() as cursor:
-            # Define the SQL command to update the language_id
-            query = f"""
+            # Define the SQL command to update the status to FALSE
+            query = """
                 UPDATE order_list
-                SET status = FASLE
+                SET status = FALSE
                 WHERE url_id = %s;
             """
             
             # Execute the SQL command with parameters
-            await cursor.execute(query, (id))
+            await cursor.execute(query, (id,))  # Pass parameters as a tuple
             
             # Commit the transaction
             await connection.commit()
-            print(f"Successfully updated oder_list for id {id} to FALSE.")
+            logging.info(f"Successfully updated order_list for id {id} to FALSE.")
 
     except (Exception, psycopg.Error) as error:
-        print("Error while updating:", error)
+        logging.error(f"Error while updating order_list: {error}", exc_info=True)
     
     finally:
         if connection:
             await connection.close()
-            print("PostgreSQL connection is closed")
+            logging.info("PostgreSQL connection is closed.")

@@ -93,7 +93,7 @@ async def handle_audio_message(message: Message, file_size_lm: int, file_duratio
     audio = message.audio
     # Download and process the audio file if needed
     print(f"Received audio file: {audio.file_id} - {audio.file_name}")
-    await message.reply("Received your audio file!")
+    # await message.reply("Received your audio file!")
 
     file_id = message.audio.file_id
     file_name = message.audio.file_name or "Unknown_Song.mp3"
@@ -151,23 +151,41 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
         else:
             duration = await get_audio_duration(filtred)
             await dataPostgres.insert_links(filtred, duration, user_id)
+        id = await dataPostgres.get_id_byUrl(filtred)
         if duration < duration_lm:
             proccesing_messagee = await message.reply("Processing your YouTube audio...")
-            id, chat_id, message_id = await dataPostgres.get_link_data(filtred)
             
-            if message_id == 0:
-                #cheking the order table exist or not
-                await asyncio.sleep(6)
+
+            #checking the file exist on order_list
+            if await dataPostgres.check_file_exists_order(id):
                 while(True):
                     if await dataPostgres.check_file_exists_order_true(id):
                         await asyncio.sleep(10)
                     else:
+                        chat_id, message_id = await dataPostgres.get_link_data(filtred)
                         await forward_message_to_user(bot, chat_id, message_id, user_id)
                         await proccesing_messagee.delete()
                         break
-                
             else:
-                await forward_message_to_user(bot, chat_id, message_id, user_id)
+                await dataPostgres.insert_into_order_list(id)
+                
+                #if exist cheking is it true
+                    #sleep 10
+                #else
+                    #
+            # if message_id == 0:
+            #     #cheking the order table exist or not
+            #     await asyncio.sleep(6)
+            #     while(True):
+            #         if await dataPostgres.check_file_exists_order_true(id):
+            #             await asyncio.sleep(10)
+            #         else:
+            #             await forward_message_to_user(bot, chat_id, message_id, user_id)
+            #             await proccesing_messagee.delete()
+            #             break
+                
+            # else:
+            #     await forward_message_to_user(bot, chat_id, message_id, user_id)
             
         else:
                 await message.reply("Your link out of limits. no more thant 10 minutes and no playlists.")
