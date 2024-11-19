@@ -157,7 +157,11 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
                             mp3_file_path_send = mp3_files[0]  # Assuming only one .mp3 file per folder
                             # logging.info(f"audio is located in {mp3_file_path_send}")
                             try:
-                                sendFile = await bot.send_audio(chat_id=user_id, audio=FSInputFile(mp3_file_path_send))
+                                logging.info(f"startig a sending")
+                                # original_filename_ = mp3_file_path_send.name  # Extract the original file name
+                                logging.info(f"startig a sending")
+                                file_to_sendS = FSInputFile(mp3_file_path_send, filename=mp3_file_path_send.name)
+                                sendFile = await bot.send_audio(chat_id=user_id_down, audio=file_to_sendS)
                                 id = await track_message(sendFile, vocal_percentage)
                                 logging.info(f"Message ID is {sendFile.message_id}")
 
@@ -188,15 +192,16 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
                             mp3_file_path = mp3_files[0]  # Assuming only one .mp3 file per folder
                             # logging.info(f"audio is located in {mp3_file_path}")
                             try:
-                                await asyncio.sleep(5)
-                                original_filename = mp3_file_path.name  # Extract the original file name
-                                file_to_send = FSInputFile(mp3_file_path, filename=original_filename)
+                                # await asyncio.sleep(3)
+                                # original_filename = mp3_file_path.name  # Extract the original file name
+                                logging.info(f"startig a sending")
+                                file_to_send = FSInputFile(mp3_file_path, filename=mp3_file_path.name)
                                 downFile = await bot.send_audio(chat_id=user_id_down, audio=file_to_send)
                                 # downFile = await bot.send_audio(chat_id=user_id_down, audio=FSInputFile(mp3_file_path))
                                 # id = await track_message(sendFile, vocal_percentage)
                                 # logging.info(f"Message ID is {sendFile.message_id}")
                                 await dataPostgres.update_linksYou_message_id(song_id, downFile.message_id)
-                                # await deleting_folder(f"down{song_id}")
+                                await deleting_folder(f"down{song_id}")
                                 # file_id = await dataPostgres.get_file_id_by_id(song_id)
                                 # await dataPostgres.update_out_id_by_percent(file_id, id, vocal_percentage)
 

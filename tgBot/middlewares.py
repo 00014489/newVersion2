@@ -16,18 +16,18 @@ import asyncio
 
 
 
-async def get_audio_duration(url):
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'quiet': True,  # Suppress download logs
-        'noplaylist': True,
-        'skip_download': True,  # Avoid downloading, just get metadata
-    }
+# async def get_audio_duration(url):
+#     ydl_opts = {
+#         'format': 'bestaudio/best',
+#         'quiet': True,  # Suppress download logs
+#         'noplaylist': True,
+#         'skip_download': True,  # Avoid downloading, just get metadata
+#     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        duration = info.get('duration', 0)  # Duration in seconds if available
-        return duration
+#     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+#         info = ydl.extract_info(url, download=False)
+#         duration = info.get('duration', 0)  # Duration in seconds if available
+#         return duration
                         
 async def forward_message_to_user(bot: Bot, from_chat_id: int, message_id: int, to_chat_id: int):
     try:
@@ -199,29 +199,67 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
     # Pass the event to the handler
     return await handler(event, data)
 
-
-async def check_and_insert_link(filtred, user_id, max_retries=10, retries = 0):
-    # delay = initial_delay
+async def check_and_insert_link(filtred, user_id, max_retries=8):
+    retries = 0
     while retries < max_retries:
         try:
             if await dataPostgres.link_exists(filtred):
+                # Fetch the duration from the database
                 duration = await dataPostgres.get_link_duration(filtred)
+                
+                # Check if the duration is None, and handle it
+                if duration is None:
+                    logging.error(f"Duration is None for link {filtred}, retrying...")
+                    await asyncio.sleep(5)
+                    retries += 1
+                    continue  # Skip the rest of the loop and retry
+                
+                # Check if the duration is 0
                 if duration == 0:
                     logging.info("Duration is 0, retrying...")
                     await asyncio.sleep(5)
-                else:
-                    logging.info(f"Found the duration: {duration}")
-                    return duration
+                    retries += 1
+                    continue  # Skip the rest of the loop and retry
+
+                # If a valid duration is found
+                logging.info(f"Found the duration: {duration}")
+                return duration
             else:
+                # Insert the link if it doesn't exist
                 await dataPostgres.insert_links(filtred, user_id)
                 logging.info(f"Inserted link for user {user_id}: {filtred}")
                 return None
         except Exception as e:
             logging.error(f"An error occurred: {e}")
             await asyncio.sleep(2)
-        retries += 1
-    logging.warning(f"Max retries reached for link: {filtred}")
+            retries += 1
+
+    # After max retries, return None if no valid duration found
+    logging.error(f"Failed to retrieve duration for {filtred} after {max_retries} retries.")
     return None
+
+# async def check_and_insert_link(filtred, user_id, max_retries=10, retries = 0):
+#     # delay = initial_delay
+#     while retries < max_retries:
+#         try:
+#             if await dataPostgres.link_exists(filtred):
+#                 duration = await dataPostgres.get_link_duration(filtred)
+#                 if duration == 0:
+#                     logging.info("Duration is 0, retrying...")
+#                     await asyncio.sleep(5)
+#                 else:
+#                     logging.info(f"Found the duration: {duration}")
+#                     return duration
+#             else:
+#                 await dataPostgres.insert_links(filtred, user_id)
+#                 logging.info(f"Inserted link for user {user_id}: {filtred}")
+#                 return None
+#         except Exception as e:
+#             logging.error(f"An error occurred: {e}")
+#             await asyncio.sleep(2)
+#         retries += 1
+#     logging.warning(f"Max retries reached for link: {filtred}")
+#     return None
 
 # if False: # if exist
 #     return

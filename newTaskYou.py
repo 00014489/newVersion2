@@ -56,7 +56,7 @@ async def main():
         
         # Use asyncio.gather to run both functions concurrently
         task1 = asyncio.create_task(process_url())  # Run the process_url loop
-        task2 = asyncio.create_task(get_audio_duration())  # Run get_audio_duration
+        task2 = asyncio.create_task(process_duration())  # Run get_audio_duration
         
         # Wait for both tasks to finish
         await asyncio.gather(task1, task2)
