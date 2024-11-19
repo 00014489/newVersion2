@@ -29,6 +29,7 @@ async def process_duration():
     while True:
         # Get links from the database where the duration is 0
         links = await dataPostgres.get_url_duration_0()
+        logging.info(f"{links}")
 
         if links:
             for link in links:

@@ -317,20 +317,38 @@ async def insert_into_input_file(file_id: str, file_name: str, file_name_origina
         await conn.close()  # Ensure the connection is closed
 
 
-async def check_file_exists_with_percentage(file_id: str, percent: int) -> bool:
+async def check_file_exists_with_percentage(file_id: str, percent: int, check_value: str = "not_zero") -> bool:
+    """
+    Check if a file exists in the database with a specific percentage condition.
 
+    Args:
+        file_id (str): The file ID to check.
+        percent (int): The percentage column to check (e.g., `out_{percent}_id`).
+        check_value (str): The condition to check ('negative_one' or 'not_zero').
+
+    Returns:
+        bool: True if the condition is met, False otherwise.
+    """
     conn = await get_db_connection()
     try:
         # Dynamically create the column name based on the percentage
         column_name = f"out_{percent}_id"
 
+        # Determine the condition based on check_value
+        if check_value == "negative_one":
+            condition = f"{column_name} = -1"
+        elif check_value == "not_zero":
+            condition = f"{column_name} != 0"
+        else:
+            raise ValueError("Invalid check_value. Use 'negative_one' or 'not_zero'.")
+
         async with conn.cursor() as cur:
-            # Execute a query to check if the file_id exists and the column out_{percent}_id is not 0
+            # Execute a query to check the condition
             query = f"""
                 SELECT EXISTS (
                     SELECT 1
                     FROM input_file
-                    WHERE file_id = %s AND {column_name} != 0
+                    WHERE file_id = %s AND {condition}
                 );
             """
             await cur.execute(query, (file_id,))
@@ -339,14 +357,15 @@ async def check_file_exists_with_percentage(file_id: str, percent: int) -> bool:
             result = await cur.fetchone()
 
             # Extract the boolean value from the result
-            file_exists = result[0]
-            return file_exists
+            return result[0]
     except Exception as e:
-        logging.error(f"Error checking file existence with {percent}%: {e}")
+        logging.error(f"Error checking file existence with {percent}% ({check_value}): {e}")
         return False
     finally:
         # Ensure the connection is closed
         await conn.close()
+
+
 
 async def get_output_id_for_percentage(file_id: str, percent: int) -> int:
     conn = await get_db_connection()

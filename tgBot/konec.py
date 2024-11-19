@@ -157,11 +157,11 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
                             mp3_file_path_send = mp3_files[0]  # Assuming only one .mp3 file per folder
                             # logging.info(f"audio is located in {mp3_file_path_send}")
                             try:
-                                logging.info(f"startig a sending")
+                                # logging.info(f"startig a sending")
                                 # original_filename_ = mp3_file_path_send.name  # Extract the original file name
                                 logging.info(f"startig a sending")
                                 file_to_sendS = FSInputFile(mp3_file_path_send, filename=mp3_file_path_send.name)
-                                sendFile = await bot.send_audio(chat_id=user_id_down, audio=file_to_sendS)
+                                sendFile = await bot.send_audio(chat_id=user_id, audio=file_to_sendS)
                                 id = await track_message(sendFile, vocal_percentage)
                                 logging.info(f"Message ID is {sendFile.message_id}")
 

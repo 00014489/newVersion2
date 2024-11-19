@@ -163,10 +163,16 @@ async def handle_playlist_move(callback: CallbackQuery, bot: Bot):
     processing_message = await callback.message.edit_text("Please wait ...")
 
     if await dataPostgres.check_file_exists_with_percentage(file_id, vocal_percentage):
-        id = await dataPostgres.get_output_id_for_percentage(file_id, vocal_percentage)
-        from_chat_id, message_id = await dataPostgres.get_chat_and_message_id_by_id(id, vocal_percentage)
-        await forward_message_to_user(bot, from_chat_id, message_id, chat_id)
+        while True:
+            if await dataPostgres.check_file_exists_with_percentage(file_id, vocal_percentage, "negative_one"):
+                await asyncio.sleep(10)
+            else:
+                id = await dataPostgres.get_output_id_for_percentage(file_id, vocal_percentage)
+                from_chat_id, message_id = await dataPostgres.get_chat_and_message_id_by_id(id, vocal_percentage)
+                await forward_message_to_user(bot, from_chat_id, message_id, chat_id)
+                break
     else:
+        await dataPostgres.update_out_id_by_percent(file_id, -1, vocal_percentage)
         save_directory = f'./inputSongs{vocal_percentage}:{id_input}:{chat_id}'
         os.makedirs(save_directory, exist_ok=True)
 
