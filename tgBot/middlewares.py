@@ -147,15 +147,11 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
         filtred = normalize_youtube_url(messageText.strip())
         pleaseReply = await message.reply("Please wait...")
         # user_id = message.from_user.id
-        if await dataPostgres.link_exists(filtred):
-            duration = await dataPostgres.get_link_duration(filtred)
-        else:
-            duration = await get_audio_duration(filtred)
-            await dataPostgres.insert_links(filtred, duration, user_id)
+        duration = await check_and_insert_link(filtred, user_id)
         id = await dataPostgres.get_id_byUrl(filtred)
         await pleaseReply.delete()
         if duration < duration_lm:
-            # proccesing_messagee = await message.reply("Processing your YouTube audio...")
+            proccesing_messagee = await message.reply("Processing your YouTube audio...")
             
 
             #checking the file exist on order_list
@@ -166,8 +162,8 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
                     else:
                         chat_id, message_id = await dataPostgres.get_link_data(filtred)
                         await forward_message_to_user(bot, chat_id, message_id, user_id)
-                        # await proccesing_messagee.delete()
-                        await pleaseReply.delete()
+                        await proccesing_messagee.delete()
+                        # await pleaseReply.delete()
                         break
             else:
                 await dataPostgres.insert_into_order_list(id)
@@ -202,6 +198,30 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
 
     # Pass the event to the handler
     return await handler(event, data)
+
+
+async def check_and_insert_link(filtred, user_id, max_retries=10, retries = 0):
+    # delay = initial_delay
+    while retries < max_retries:
+        try:
+            if await dataPostgres.link_exists(filtred):
+                duration = await dataPostgres.get_link_duration(filtred)
+                if duration == 0:
+                    logging.info("Duration is 0, retrying...")
+                    await asyncio.sleep(5)
+                else:
+                    logging.info(f"Found the duration: {duration}")
+                    return duration
+            else:
+                await dataPostgres.insert_links(filtred, user_id)
+                logging.info(f"Inserted link for user {user_id}: {filtred}")
+                return None
+        except Exception as e:
+            logging.error(f"An error occurred: {e}")
+            await asyncio.sleep(2)
+        retries += 1
+    logging.warning(f"Max retries reached for link: {filtred}")
+    return None
 
 # if False: # if exist
 #     return

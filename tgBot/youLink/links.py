@@ -31,3 +31,16 @@ def download_audio_from_youtube(id):
         mp3_path = os.path.splitext(file_path)[0] + ".mp3"
         
         return mp3_path  # Return the final MP3 file path
+    
+async def get_audio_duration(url):
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'quiet': True,  # Suppress download logs
+        'noplaylist': True,
+        'skip_download': True,  # Avoid downloading, just get metadata
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        duration = info.get('duration', 0)  # Duration in seconds if available
+        return duration

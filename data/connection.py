@@ -699,7 +699,7 @@ async def get_user_ids():
         await conn.close()
 
 
-async def insert_links(url: str, duration: int, user_id : int):
+async def insert_links(url: str, user_id : int):
     conn = await get_db_connection()
     try:
         async with conn.cursor() as cur:
@@ -714,13 +714,13 @@ async def insert_links(url: str, duration: int, user_id : int):
             if not exists:
                 await cur.execute(
                     """
-                    INSERT INTO linksYou (links, duration, chatid)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO linksYou (links, chatid)
+                    VALUES (%s, %s)
                     """,
-                    (url, duration, user_id)
+                    (url, user_id)
                 )
                 await conn.commit()
-            logging.info(f"Inserted data to url {url} \n data {duration} to user {user_id}")
+            logging.info(f"Inserted data to url {url} \n data to user {user_id}")
     except Exception as e:
         logging.error(f"Error inserting or updating user: {e}")
     finally:
@@ -873,35 +873,65 @@ async def get_chat_idBy_id(song_id: int):
 
 
 async def update_linksYou_message_id(id: int, message_id: int):
-    connection = await get_db_connection()
-    # out_column = f"out_{percent}_id"
+    """
+    Updates the message_id for a specific link in the `linksyou` table.
+
+    Args:
+        id (int): The ID of the link to update.
+        message_id (int): The new message_id value.
+    """
     try:
-        # Establish the async connection to the database
+        # Establish an async connection to the database
         connection = await get_db_connection()
 
-        # Use async context manager with the connection cursor
+        # Use an async context manager with the connection cursor
         async with connection.cursor() as cursor:
-            # Define the SQL command to update the language_id
-            query = f"""
+            query = """
                 UPDATE linksyou
                 SET messageid = %s
                 WHERE id = %s;
             """
-            
             # Execute the SQL command with parameters
             await cursor.execute(query, (message_id, id))
-            
-            # Commit the transaction
-            await connection.commit()
-            print(f"Successfully updated links for id {id} value {message_id}.")
-
-    except (Exception, psycopg.Error) as error:
-        print("Error while updating:", error)
-    
+            await connection.commit()  # Commit the transaction
+            logging.info(f"Successfully updated message_id for id '{id}' to '{message_id}'.")
+    except (Exception, psycopg.DatabaseError) as error:
+        logging.error(f"Error while updating message_id for id '{id}': {error}")
     finally:
         if connection:
             await connection.close()
+            logging.info("PostgreSQL connection is closed.")
             print("PostgreSQL connection is closed")
+
+
+async def update_links_duration(links: str, duration: int):
+    """
+    Updates the duration for a specific link in the `linksyou` table.
+
+    Args:
+        links (str): The link to update.
+        duration (int): The new duration value.
+    """
+    try:
+        # Establish an async connection to the database
+        connection = await get_db_connection()
+
+        # Use an async cursor to execute the query
+        async with connection.cursor() as cursor:
+            query = """
+                UPDATE linksyou
+                SET duration = %s
+                WHERE links = %s;
+            """
+            await cursor.execute(query, (duration, links))
+            await connection.commit()  # Commit the transaction
+            logging.info(f"Successfully updated duration for link '{links}' to {duration}.")
+    except (Exception, psycopg.DatabaseError) as error:
+        logging.error(f"Error while updating duration for link '{links}': {error}")
+    finally:
+        if connection:
+            await connection.close()
+            logging.info("PostgreSQL connection is closed.")
 
 
 async def check_user_premium(user_id) -> bool:
@@ -1031,6 +1061,8 @@ def get_url_By_id(song_id: int):
             conn.close()  # Ensure the connection is closed
 
 
+
+
 async def insert_into_order_list(url_id: int):
     conn = await get_db_connection()  # Assuming you have get_db_connection() defined
     try:
@@ -1061,6 +1093,33 @@ async def get_url_ids_status_true():
         SELECT url_id
         FROM order_list
         WHERE status = TRUE;
+    """
+
+    conn = await get_db_connection()  # Your async function to get the psycopg3 connection
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute(query)
+            result = await cur.fetchall()  # Fetch all matching rows
+            # Extract url_id from each row and return as a list
+            url_ids = [row[0] for row in result]
+            return url_ids
+    except Exception as e:
+        logging.error(f"Error retrieving url_ids: {e}")
+        return []
+    finally:
+        await conn.close()
+
+
+async def get_url_duration_0():
+    """
+    Retrieves the list of url_ids from the 'order_list' table where status is TRUE.
+
+    :return: A list of url_ids or an empty list if no matches are found.
+    """
+    query = """
+        SELECT links
+        FROM linksyou
+        WHERE duration = 0;
     """
 
     conn = await get_db_connection()  # Your async function to get the psycopg3 connection
