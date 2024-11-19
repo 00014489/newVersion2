@@ -166,6 +166,7 @@ async def handle_playlist_move(callback: CallbackQuery, bot: Bot):
         while True:
             if await dataPostgres.check_file_exists_with_percentage(file_id, vocal_percentage, "negative_one"):
                 await asyncio.sleep(10)
+                logging.info(f"waiting a process")
             else:
                 id = await dataPostgres.get_output_id_for_percentage(file_id, vocal_percentage)
                 from_chat_id, message_id = await dataPostgres.get_chat_and_message_id_by_id(id, vocal_percentage)
