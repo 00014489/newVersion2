@@ -188,12 +188,15 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
                             mp3_file_path = mp3_files[0]  # Assuming only one .mp3 file per folder
                             # logging.info(f"audio is located in {mp3_file_path}")
                             try:
-                                asyncio.sleep(5)
-                                downFile = await bot.send_audio(chat_id=user_id_down, audio=FSInputFile(mp3_file_path))
+                                await asyncio.sleep(5)
+                                original_filename = mp3_file_path.name  # Extract the original file name
+                                file_to_send = FSInputFile(mp3_file_path, filename=original_filename)
+                                downFile = await bot.send_audio(chat_id=user_id_down, audio=file_to_send)
+                                # downFile = await bot.send_audio(chat_id=user_id_down, audio=FSInputFile(mp3_file_path))
                                 # id = await track_message(sendFile, vocal_percentage)
                                 # logging.info(f"Message ID is {sendFile.message_id}")
                                 await dataPostgres.update_linksYou_message_id(song_id, downFile.message_id)
-                                await deleting_folder(f"down{song_id}")
+                                # await deleting_folder(f"down{song_id}")
                                 # file_id = await dataPostgres.get_file_id_by_id(song_id)
                                 # await dataPostgres.update_out_id_by_percent(file_id, id, vocal_percentage)
 
