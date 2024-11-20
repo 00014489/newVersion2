@@ -49,54 +49,35 @@ async def format_column_namesForDatabase(input_string: str) -> str:
 
 
 @router.message(CommandStart())
-async def cmd_start(message: Message):
+async def cmd_start(message: Message, bot: Bot):
     user_id = message.from_user.id
     userName = message.from_user.username
     await dataPostgres.insert_user_if_not_exists(user_id, userName)
-     # Path to your image
-    photo = FSInputFile("./tgBot/images/photo_2024-09-13_10-23-12.jpg")
-    await message.answer_photo(
-        photo, 
-        caption=(
-        "Welcome to MinusGolos bot\n\n"
-        "Send a audio file and get minus of sended audio file\n\n"
-        f"U can choose for returning the output with 0% vocal or 15% or 50%.\n\n"
-        f"Press 0% if u want to get only the minus of song\n"
-        f"Press 15% if u want to get audio with a little vocal\n"
-        f"Press 50% if you want to get audio with 50% of the vocal sound\n\n\n"
-        f"Send a link of video from YouTube and get mp3 file\n\n"
-        "Great point, Day by day the bot will become faster"),
-        reply_markup=kb.main)
+
+    await bot.copy_message(chat_id=user_id, from_chat_id=1081599122, message_id=5622)
+    # await bot.forward_message(chat_id=user_id, from_chat_id=1081599122, message_id=5622)
+    await message.answer("Choose an option", reply_markup=kb.main)
+
+    
+@router.message(Command("help"))
+async def cmd_help(message: Message, bot: Bot):
+
+    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5630
+)
+    # await bot.forward_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5630)
     
 
-@router.message(Command("help"))
-async def cmd_help(message: Message):
-    photo = FSInputFile("./tgBot/images/help.jpg")
-    # Sending an image with text
-    # First message with the main instructions and general information
-    await message.answer_photo(
-        photo,
-        caption=(
-            f"Send song and get a minus of song\n\n"
-            f"0% button - it is button for getting the 0% vocal audio file\n"
-            f"15% button - it is button for getting the audio with 15% vocal volume for better quality\n"
-            f"50% button - it is button for getting the audio with 50% vocal volume for better melody\n"
-            "If u get error that process is too long please try again\n\n"
-            "Do not forget. Day by day the bot will become more and more faster\n"
-            "U can check it by practicing ...\n\n"
-            "If u have technical problems. U can contact admin"
-            
-    ))
-
-
 @router.message(Command("Premium"))
-async def cmd_help(message: Message):
-    await message.answer("Upgrade price for 30 days: $2.\n\nFeatures include:\n- Increased duration up to 10 minutes\n- Increased file size up to 25 MB\n- No advertisements\n\nTo get premium, please contact @haveNoIdeaYet.")
+async def cmd_help(message: Message, bot :Bot):
+    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5634)
+    
+    # await bot.forward_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5634)
+    # await message.answer("Upgrade price for 30 days: $2.\n\nFeatures include:\n- Increased duration up to 10 minutes\n- Increased file size up to 25 MB\n- No advertisements\n\nTo get premium, please contact @haveNoIdeaYet.")
 
 
 
 
-ADMIN_ID = 1031267509
+ADMIN_ID =  1081599122 #1031267509
 forwarding_enabled = False
 
 
@@ -129,7 +110,8 @@ async def forward_message_to_users(from_chat_id: int, message_id: int, bot: Bot)
 
     for user_id in users:
         try:
-            await bot.forward_message(chat_id=user_id, from_chat_id=from_chat_id, message_id=message_id)
+            await bot.copy_message(chat_id=user_id, from_chat_id=from_chat_id, message_id=message_id)
+            # await bot.forward_message(chat_id=user_id, from_chat_id=from_chat_id, message_id=message_id)
             print(f"Message forwarded to user: {user_id}")
         except TelegramAPIError as e:
             print(f"Failed to forward message to user {user_id}: {e}")
@@ -146,6 +128,7 @@ async def handle_message_reklama(message: Message):
     # Check if the user is the admin
     if message.from_user and message.from_user.id != ADMIN_ID:
         return  # Exit early if the user is not the admin
+    # await message.reply(f"{message.message_id} and chat {message.from_user.id}")
 
     # Only forward the message if forwarding is enabled
     if forwarding_enabled:
@@ -187,3 +170,42 @@ async def handle_playlist_move(callback: CallbackQuery, bot: Bot):
         
     await asyncio.sleep(3)
     await bot.delete_message(chat_id, processing_message.message_id)
+
+
+forwarding_enabled_all = False
+
+
+@router.message(Command("turn_on_all"))
+async def turn_on_forwarding_all(message: Message):
+    """Command to turn on message forwarding (only admin can turn it on)."""
+    global forwarding_enabled_all
+    if message.from_user.id == ADMIN_ID:
+        forwarding_enabled_all = True
+        await message.answer("Message forwarding has been turned ON.")
+    else:
+        await message.answer("You don't have permission to use this command.")
+
+@router.message(Command("turn_off_all"))
+async def turn_off_forwarding_all(message: Message):
+    """Command to turn off message forwarding (only admin can turn it off)."""
+    global forwarding_enabled_all
+    if message.from_user.id == ADMIN_ID:
+        forwarding_enabled_all = False
+        await message.answer("Message forwarding has been turned OFF.")
+    else:
+        await message.answer("You don't have permission to use this command.")
+
+async def forward_message_to_users_all(from_chat_id: int, message_id: int, bot: Bot):
+    global forwarding_enabled_all
+    users = await dataPostgres.get_user_ids_all()
+    if not forwarding_enabled_all or not users:
+        print("Message forwarding is disabled or no users to forward to. Skipping...")
+        return
+
+    for user_id in users:
+        try:
+            await bot.forward_message(chat_id=user_id, from_chat_id=from_chat_id, message_id=message_id)
+            print(f"Message forwarded to user: {user_id}")
+        except TelegramAPIError as e:
+            print(f"Failed to forward message to user {user_id}: {e}")
+        await asyncio.sleep(0.03)  # 30 milliseconds delay to respect Telegram API limits

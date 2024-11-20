@@ -717,6 +717,36 @@ async def get_user_ids():
     finally:
         await conn.close()
 
+async def get_user_ids_all():
+    """
+    Retrieves the full list of user_ids from the 'users' table.
+
+    :return: A list of all user_ids or an empty list if no users are found.
+    """
+    query = """
+        SELECT user_id
+        FROM users;
+    """
+    
+    conn = await get_db_connection()  # Assuming you have an async function to get DB connection
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute(query)
+            result = await cur.fetchall()  # Fetch all matching results
+            
+            if result:
+                # Extract user_id from each row and return as a list
+                user_ids = [row[0] for row in result]
+                return user_ids
+            else:
+                logging.info("No users found in the table.")
+                return []
+    except Exception as e:
+        logging.error(f"Error retrieving user_ids: {e}")
+        return []
+    finally:
+        await conn.close()
+
 
 async def insert_links(url: str, user_id : int):
     conn = await get_db_connection()
