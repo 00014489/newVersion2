@@ -134,7 +134,7 @@ async def handle_message_reklama(message: Message):
     if forwarding_enabled:
         await forward_message_to_users(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot)
     else:
-        await message.answer("Message forwarding is currently disabled.")
+        await message.answer("Message forwarding for ordinary users is currently disabled.")
 
 @router.callback_query(F.data.startswith("mix_vocals"))
 async def handle_playlist_move(callback: CallbackQuery, bot: Bot):
@@ -204,8 +204,28 @@ async def forward_message_to_users_all(from_chat_id: int, message_id: int, bot: 
 
     for user_id in users:
         try:
-            await bot.forward_message(chat_id=user_id, from_chat_id=from_chat_id, message_id=message_id)
+            await bot.copy_message(chat_id=user_id, from_chat_id=from_chat_id, message_id=message_id)
             print(f"Message forwarded to user: {user_id}")
         except TelegramAPIError as e:
             print(f"Failed to forward message to user {user_id}: {e}")
         await asyncio.sleep(0.03)  # 30 milliseconds delay to respect Telegram API limits
+
+
+@router.message()
+async def handle_message_reklama_all(message: Message):
+    """
+    Handles incoming messages to the bot and forwards them to a list of users
+    only if forwarding is enabled. This function is restricted to the admin.
+    """
+    global forwarding_enabled_all
+
+    # Check if the user is the admin
+    if message.from_user and message.from_user.id != ADMIN_ID:
+        return  # Exit early if the user is not the admin
+    # await message.reply(f"{message.message_id} and chat {message.from_user.id}")
+
+    # Only forward the message if forwarding is enabled
+    if forwarding_enabled:
+        await forward_message_to_users_all(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot)
+    else:
+        await message.answer("Message forwarding for all users is currently disabled.")
