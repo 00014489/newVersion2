@@ -54,7 +54,7 @@ async def cmd_start(message: Message, bot: Bot):
     userName = message.from_user.username
     await dataPostgres.insert_user_if_not_exists(user_id, userName)
 
-    await bot.copy_message(chat_id=user_id, from_chat_id=1081599122, message_id=5622)
+    await bot.copy_message(chat_id=user_id, from_chat_id=1081599122, message_id=9373)
     # await bot.forward_message(chat_id=user_id, from_chat_id=1081599122, message_id=5622)
     await message.answer("Choose an option", reply_markup=kb.main)
 
@@ -62,14 +62,14 @@ async def cmd_start(message: Message, bot: Bot):
 @router.message(Command("help"))
 async def cmd_help(message: Message, bot: Bot):
 
-    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5630
+    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5677
 )
     # await bot.forward_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5630)
     
 
 @router.message(Command("Premium"))
 async def cmd_help(message: Message, bot :Bot):
-    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5634)
+    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5681)
     
     # await bot.forward_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5634)
     # await message.answer("Upgrade price for 30 days: $2.\n\nFeatures include:\n- Increased duration up to 10 minutes\n- Increased file size up to 25 MB\n- No advertisements\n\nTo get premium, please contact @haveNoIdeaYet.")
@@ -153,6 +153,7 @@ async def handle_playlist_move(callback: CallbackQuery, bot: Bot):
             else:
                 id = await dataPostgres.get_output_id_for_percentage(file_id, vocal_percentage)
                 from_chat_id, message_id = await dataPostgres.get_chat_and_message_id_by_id(id, vocal_percentage)
+                await bot.delete_message(chat_id, processing_message.message_id)
                 await forward_message_to_user(bot, from_chat_id, message_id, chat_id)
                 break
     else:
@@ -168,7 +169,7 @@ async def handle_playlist_move(callback: CallbackQuery, bot: Bot):
         await bot.download_file(file.file_path, destination=file_path)
 
         
-    await asyncio.sleep(3)
+    await asyncio.sleep(30)
     await bot.delete_message(chat_id, processing_message.message_id)
 
 

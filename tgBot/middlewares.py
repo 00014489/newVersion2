@@ -16,18 +16,18 @@ import asyncio
 
 
 
-async def get_audio_duration(url):
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'quiet': True,  # Suppress download logs
-        'noplaylist': True,
-        'skip_download': True,  # Avoid downloading, just get metadata
-    }
+# async def get_audio_duration(url):
+#     ydl_opts = {
+#         'format': 'bestaudio/best',
+#         'quiet': True,  # Suppress download logs
+#         'noplaylist': True,
+#         'skip_download': True,  # Avoid downloading, just get metadata
+#     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        duration = info.get('duration', 0)  # Duration in seconds if available
-        return duration
+#     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+#         info = ydl.extract_info(url, download=False)
+#         duration = info.get('duration', 0)  # Duration in seconds if available
+#         return duration
                         
 async def forward_message_to_user(bot: Bot, from_chat_id: int, message_id: int, to_chat_id: int):
     try:
@@ -182,6 +182,8 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
                             break
             else:
                 await dataPostgres.insert_into_order_list(id)
+                await asyncio.sleep(20)
+                await proccesing_messagee.delete()
                 
                 #if exist cheking is it true
                     #sleep 10
