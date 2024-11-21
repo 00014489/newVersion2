@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher
 from tgBot.handlers.handlers import router
 from tgBot.konec import run_task_send, schedule_daily_task
-# from deploymentbot.middlewares.middlewares import AudioFileMiddleware, BotMessageTrackerMiddleware
 from tgBot.middlewares import MessageHandlerMiddleware
 
 # Initialize logging

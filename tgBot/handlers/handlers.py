@@ -1,18 +1,13 @@
 from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, FSInputFile
-# import data.connection as dataPostgres
+from aiogram.types import Message
 from aiogram.types import CallbackQuery
 from aiogram.exceptions import TelegramAPIError
 import data.connection as dataPostgres
-# import psutil
 import tgBot.bot_keyboards.bot_keyboards as kb
 import logging
-# import gc
 from concurrent.futures import ThreadPoolExecutor
-# from run import process_audio_file
 import re
-# import shutil  # For deleting directories and their content
 import asyncio
 import os
 

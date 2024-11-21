@@ -1,33 +1,13 @@
 from aiogram import BaseMiddleware, Bot, exceptions
-from aiogram.types import Message, Update, FSInputFile, InputFile
-import io
-# from aiogram.exceptions import TelegramAPIError
-# from tgBot.youLink.links import download_audio_from_youtube
-# from aiogram.dispatcher.middlewares.base import CancelHandler
+from aiogram.types import Message, Update
 import os
-import yt_dlp
 import re
 import tgBot.bot_keyboards.inlineKeyboards as kbIn
 import data.connection as dataPostgres
 import logging
-import aiohttp
-import urllib.parse
 import asyncio
 
 
-
-# async def get_audio_duration(url):
-#     ydl_opts = {
-#         'format': 'bestaudio/best',
-#         'quiet': True,  # Suppress download logs
-#         'noplaylist': True,
-#         'skip_download': True,  # Avoid downloading, just get metadata
-#     }
-
-#     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-#         info = ydl.extract_info(url, download=False)
-#         duration = info.get('duration', 0)  # Duration in seconds if available
-#         return duration
                         
 async def forward_message_to_user(bot: Bot, from_chat_id: int, message_id: int, to_chat_id: int):
     try:
@@ -185,23 +165,6 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
                 await asyncio.sleep(20)
                 await proccesing_messagee.delete()
                 
-                #if exist cheking is it true
-                    #sleep 10
-                #else
-                    #
-            # if message_id == 0:
-            #     #cheking the order table exist or not
-            #     await asyncio.sleep(6)
-            #     while(True):
-            #         if await dataPostgres.check_file_exists_order_true(id):
-            #             await asyncio.sleep(10)
-            #         else:
-            #             await forward_message_to_user(bot, chat_id, message_id, user_id)
-            #             await proccesing_messagee.delete()
-            #             break
-                
-            # else:
-            #     await forward_message_to_user(bot, chat_id, message_id, user_id)
             
         else:
                 await message.reply("Your link out of limits. \n\nLimits:\nOridinary users -> Max 6 minutesno\nPremium users -> Max 10 minuts.")
@@ -215,24 +178,3 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
 
     # Pass the event to the handler
     return await handler(event, data)
-
-# if False: # if exist
-#     return
-# else:
-#     try:
-#         # Download audio from YouTube
-#         mp3_path = await download_audio_from_youtube(filtred)
-        
-#         # Send the downloaded audio file to the user
-#         if os.path.exists(mp3_path):
-#             audio_file = FSInputFile(mp3_path)
-#             await message.answer_document(audio_file)
-#             # Optionally, delete the file after sending
-#             os.remove(mp3_path)
-#             await proccesing_messagee.delete()
-#         else:
-#             await message.reply("Error: Could not find the downloaded file.")
-
-#     except Exception as e:
-#         await message.reply(f"Error downloading audio: {e}")
-#         print(f"Error: {e}")
