@@ -54,7 +54,7 @@ async def cmd_start(message: Message, bot: Bot):
     userName = message.from_user.username
     await dataPostgres.insert_user_if_not_exists(user_id, userName)
 
-    await bot.copy_message(chat_id=user_id, from_chat_id=1081599122, message_id=9373)
+    await bot.copy_message(chat_id=user_id, from_chat_id=1081599122, message_id=9447)
     # await bot.forward_message(chat_id=user_id, from_chat_id=1081599122, message_id=5622)
     await message.answer("Choose an option", reply_markup=kb.main)
 
@@ -62,18 +62,16 @@ async def cmd_start(message: Message, bot: Bot):
 @router.message(Command("help"))
 async def cmd_help(message: Message, bot: Bot):
 
-    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5677
-)
+    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=9453)
     # await bot.forward_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5630)
     
 
 @router.message(Command("Premium"))
 async def cmd_help(message: Message, bot :Bot):
-    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5681)
+    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=9457)
     
     # await bot.forward_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5634)
     # await message.answer("Upgrade price for 30 days: $2.\n\nFeatures include:\n- Increased duration up to 10 minutes\n- Increased file size up to 25 MB\n- No advertisements\n\nTo get premium, please contact @haveNoIdeaYet.")
-
 
 
 
