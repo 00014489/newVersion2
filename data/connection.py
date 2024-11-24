@@ -977,7 +977,7 @@ async def insert_into_order_list(url_id: int):
         await conn.close()  # Ensure the connection is closed
 
 
-async def get_url_ids_status_true():
+def get_url_ids_status_true():
     """
     Retrieves the list of url_ids from the 'order_list' table where status is TRUE.
 
@@ -989,19 +989,53 @@ async def get_url_ids_status_true():
         WHERE status = TRUE;
     """
 
-    conn = await get_db_connection()  # Your async function to get the psycopg3 connection
+    connection = None
     try:
-        async with conn.cursor() as cur:
-            await cur.execute(query)
-            result = await cur.fetchall()  # Fetch all matching rows
+        # Establish a connection to the database
+        connection = get_db_connection_sync()
+        
+        # Use a context manager to handle the cursor
+        with connection.cursor() as cursor:
+            # Execute the query
+            cursor.execute(query)
+            # Fetch all matching rows
+            result = cursor.fetchall()
             # Extract url_id from each row and return as a list
             url_ids = [row[0] for row in result]
             return url_ids
     except Exception as e:
-        logging.error(f"Error retrieving url_ids: {e}")
+        logging.error(f"Error retrieving url_ids: {e}", exc_info=True)
         return []
     finally:
-        await conn.close()
+        if connection:
+            connection.close()
+            logging.info("PostgreSQL connection is closed.")
+
+# async def get_url_ids_status_true():
+#     """
+#     Retrieves the list of url_ids from the 'order_list' table where status is TRUE.
+
+#     :return: A list of url_ids or an empty list if no matches are found.
+#     """
+#     query = """
+#         SELECT url_id
+#         FROM order_list
+#         WHERE status = TRUE;
+#     """
+
+#     conn = await get_db_connection()  # Your async function to get the psycopg3 connection
+#     try:
+#         async with conn.cursor() as cur:
+#             await cur.execute(query)
+#             result = await cur.fetchall()  # Fetch all matching rows
+#             # Extract url_id from each row and return as a list
+#             url_ids = [row[0] for row in result]
+#             return url_ids
+#     except Exception as e:
+#         logging.error(f"Error retrieving url_ids: {e}")
+#         return []
+#     finally:
+#         await conn.close()
 
 
 async def get_url_duration_0():
@@ -1031,32 +1065,63 @@ async def get_url_duration_0():
         await conn.close()
 
 
-async def update_order_list_false(id: int):
+
+def update_order_list_false(id: int):
     connection = None
     try:
-        # Establish the async connection to the database
-        connection = await get_db_connection()
-
-        # Use async context manager with the connection cursor
-        async with connection.cursor() as cursor:
-            # Define the SQL command to update the status to FALSE
+        # Establish the connection to the database
+        connection = get_db_connection_sync()
+        
+        # Create a cursor to perform database operations
+        with connection.cursor() as cursor:
+            # Define the SQL query to update the status to FALSE
             query = """
                 UPDATE order_list
                 SET status = FALSE
                 WHERE url_id = %s;
             """
             
-            # Execute the SQL command with parameters
-            await cursor.execute(query, (id,))  # Pass parameters as a tuple
+            # Execute the query with the provided id
+            cursor.execute(query, (id,))
             
-            # Commit the transaction
-            await connection.commit()
+            # Commit the transaction to save the changes
+            connection.commit()
             logging.info(f"Successfully updated order_list for id {id} to FALSE.")
 
-    except (Exception, psycopg.Error) as error:
+    except (Exception, psycopg2.Error) as error:
         logging.error(f"Error while updating order_list: {error}", exc_info=True)
     
     finally:
         if connection:
-            await connection.close()
+            connection.close()
             logging.info("PostgreSQL connection is closed.")
+
+# async def update_order_list_false(id: int):
+#     connection = None
+#     try:
+#         # Establish the async connection to the database
+#         connection = await get_db_connection()
+
+#         # Use async context manager with the connection cursor
+#         async with connection.cursor() as cursor:
+#             # Define the SQL command to update the status to FALSE
+#             query = """
+#                 UPDATE order_list
+#                 SET status = FALSE
+#                 WHERE url_id = %s;
+#             """
+            
+#             # Execute the SQL command with parameters
+#             await cursor.execute(query, (id,))  # Pass parameters as a tuple
+            
+#             # Commit the transaction
+#             await connection.commit()
+#             logging.info(f"Successfully updated order_list for id {id} to FALSE.")
+
+#     except (Exception, psycopg.Error) as error:
+#         logging.error(f"Error while updating order_list: {error}", exc_info=True)
+    
+#     finally:
+#         if connection:
+#             await connection.close()
+#             logging.info("PostgreSQL connection is closed.")
