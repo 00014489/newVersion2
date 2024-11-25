@@ -59,8 +59,8 @@ def check_and_match_input_song_folders(base_dir: str):
     # Check RAM usage synchronously
     ram_usage = psutil.virtual_memory()
     used_ram_percentage = ram_usage.percent
-    if used_ram_percentage > 70:
-        logging.warning("RAM usage exceeds 70%. Stopping the current task.")
+    if used_ram_percentage > 75:
+        logging.warning("RAM usage exceeds 75%. Stopping the current task.")
         global task_running
         task_running = False  # Stop the task loop
         return  # Exit the function to avoid processing audio files
