@@ -51,7 +51,7 @@ class MessageHandlerMiddleware(BaseMiddleware):
                     await main_fun_process(messageText, 600, 25, 10, user_id, message, bot, handler, event, data)
                 # elif 
                 else:
-                    await main_fun_process(messageText, 360, 15, 6, user_id, message, bot, handler, event, data)
+                    await main_fun_process(messageText, 240, 10, 4, user_id, message, bot, handler, event, data)
             except Exception as e:
                 print(f"Error processing message: {e}")
         else:

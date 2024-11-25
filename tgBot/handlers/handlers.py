@@ -57,7 +57,7 @@ async def cmd_start(message: Message, bot: Bot):
 @router.message(Command("help"))
 async def cmd_help(message: Message, bot: Bot):
 
-    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=9453)
+    await bot.copy_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=9592)
     # await bot.forward_message(chat_id=message.from_user.id, from_chat_id=1081599122, message_id=5630)
     
 
@@ -72,6 +72,7 @@ async def cmd_help(message: Message, bot :Bot):
 
 ADMIN_ID =  1081599122 #1031267509
 forwarding_enabled = False
+forwarding_enabled_all = False
 
 
 @router.message(Command("turn_on"))
@@ -114,20 +115,27 @@ async def forward_message_to_users(from_chat_id: int, message_id: int, bot: Bot)
 async def handle_message_reklama(message: Message):
     """
     Handles incoming messages to the bot and forwards them to a list of users
-    only if forwarding is enabled. This function is restricted to the admin.
+    depending on whether forwarding is enabled and which type of forwarding is desired.
+    This function is restricted to the admin.
     """
-    global forwarding_enabled
+    global forwarding_enabled, forwarding_enabled_all
 
     # Check if the user is the admin
     if message.from_user and message.from_user.id != ADMIN_ID:
         return  # Exit early if the user is not the admin
     # await message.reply(f"{message.message_id} and chat {message.from_user.id}")
 
-    # Only forward the message if forwarding is enabled
-    if forwarding_enabled:
-        await forward_message_to_users(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot)
+    # Determine which forwarding action to take
+    if forwarding_enabled_all:
+        # Forward to all users
+        await forward_message_to_users(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot, to_all=True)
+    elif forwarding_enabled:
+        # Forward only to specific users
+        await forward_message_to_users(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot, to_all=False)
     else:
-        await message.answer("Message forwarding for ordinary users is currently disabled.")
+        # If neither is enabled, inform the admin
+        await message.answer("Message forwarding is currently disabled.")
+
 
 @router.callback_query(F.data.startswith("mix_vocals"))
 async def handle_playlist_move(callback: CallbackQuery, bot: Bot):
@@ -166,7 +174,6 @@ async def handle_playlist_move(callback: CallbackQuery, bot: Bot):
     await bot.delete_message(chat_id, processing_message.message_id)
 
 
-forwarding_enabled_all = False
 
 
 @router.message(Command("turn_on_all"))
@@ -189,12 +196,28 @@ async def turn_off_forwarding_all(message: Message):
     else:
         await message.answer("You don't have permission to use this command.")
 
-async def forward_message_to_users_all(from_chat_id: int, message_id: int, bot: Bot):
-    global forwarding_enabled_all
-    users = await dataPostgres.get_user_ids_all()
-    if not forwarding_enabled_all or not users:
-        print("Message forwarding is disabled or no users to forward to. Skipping...")
-        return
+
+async def forward_message_to_users(from_chat_id: int, message_id: int, bot: Bot, to_all: bool = False):
+    """
+    Forwards a message to users.
+
+    :param from_chat_id: The chat ID where the message is coming from.
+    :param message_id: The ID of the message to be forwarded.
+    :param bot: The bot instance to use for forwarding.
+    :param to_all: Whether to forward the message to all users (True) or specific users (False).
+    """
+    if to_all:
+        global forwarding_enabled_all
+        users = await dataPostgres.get_user_ids_all()  # Get all user IDs
+        if not forwarding_enabled_all or not users:
+            print("Message forwarding to all users is disabled or no users to forward to. Skipping...")
+            return
+    else:
+        global forwarding_enabled
+        users = await dataPostgres.get_user_ids()  # Get specific user IDs
+        if not forwarding_enabled or not users:
+            print("Message forwarding to specific users is disabled or no users to forward to. Skipping...")
+            return
 
     for user_id in users:
         try:
@@ -205,21 +228,28 @@ async def forward_message_to_users_all(from_chat_id: int, message_id: int, bot: 
         await asyncio.sleep(0.03)  # 30 milliseconds delay to respect Telegram API limits
 
 
-@router.message()
-async def handle_message_reklama_all(message: Message):
-    """
-    Handles incoming messages to the bot and forwards them to a list of users
-    only if forwarding is enabled. This function is restricted to the admin.
-    """
-    global forwarding_enabled_all
 
-    # Check if the user is the admin
-    if message.from_user and message.from_user.id != ADMIN_ID:
-        return  # Exit early if the user is not the admin
-    # await message.reply(f"{message.message_id} and chat {message.from_user.id}")
+# @router.message()
+# async def handle_message_reklama_all(message: Message):
+#     """
+#     Handles incoming messages to the bot and forwards them to a list of users
+#     depending on whether forwarding is enabled and which type of forwarding is desired.
+#     This function is restricted to the admin.
+#     """
+#     global forwarding_enabled, forwarding_enabled_all
 
-    # Only forward the message if forwarding is enabled
-    if forwarding_enabled:
-        await forward_message_to_users_all(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot)
-    else:
-        await message.answer("Message forwarding for all users is currently disabled.")
+#     # Check if the user is the admin
+#     if message.from_user and message.from_user.id != ADMIN_ID:
+#         return  # Exit early if the user is not the admin
+#     await message.reply(f"{message.message_id} and chat {message.from_user.id}")
+
+#     # Determine which forwarding action to take
+#     if forwarding_enabled_all:
+#         # Forward to all users
+#         await forward_message_to_users(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot, to_all=True)
+#     elif forwarding_enabled:
+#         # Forward only to specific users
+#         await forward_message_to_users(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot, to_all=False)
+#     else:
+#         # If neither is enabled, inform the admin
+#         await message.answer("Message forwarding is currently disabled.")
