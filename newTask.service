@@ -1,7 +1,6 @@
 [Unit]
-Description=Test deployement bot
-After=syslog.target
-After=network.target
+Description=Test deployment bot
+After=syslog.target network.target
 
 [Service]
 Restart=always
@@ -12,6 +11,8 @@ Group=MinusGolos
 MemoryMax=1G
 WorkingDirectory=/home/MinusGolos/Projects/newVersion2
 ExecStart=/home/MinusGolos/Projects/newVersion2/myenv/bin/python /home/MinusGolos/Projects/newVersion2/newTaskYou.py
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

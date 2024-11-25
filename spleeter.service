@@ -10,7 +10,9 @@ User=MinusGolos
 Group=MinusGolos
 MemoryMax=12G
 WorkingDirectory=/home/MinusGolos/Projects/newVersion2
-ExecStart=/bin/bash -c "source /home/MinusGolos/miniconda3/etc/profile.d/conda.sh && conda activate base && source /home/MinusGolos/Projects/newVersion2/aiBot/bin/activate && exec python check.py>
+ExecStart=/bin/bash -c "source /home/MinusGolossGolos/miniconda3/etc/profile.d/conda.sh && conda activate base && source /home/MinusGolos/Projects/newVersion2/aiBot/bin/activate && python check.py"
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

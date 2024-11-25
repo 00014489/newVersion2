@@ -1,7 +1,6 @@
 [Unit]
-Description=Test deployement bot
-After=syslog.target
-After=network.target
+Description=Test deployment bot
+After=syslog.target network.target
 
 [Service]
 Restart=always
@@ -9,9 +8,11 @@ RestartSec=5s
 Type=simple
 User=MinusGolos
 Group=MinusGolos
-MemoryMax=1G
 WorkingDirectory=/home/MinusGolos/Projects/newVersion2
-ExecStart=/home/MinusGolos/Projects/newVersion2/myenv/bin/python /home/MinusGolos/Projects/newVersion2/main.py
+ExecStart=/bin/bash -c "source /home/MinusGolos/Projects/newVersion2/myenv/bin/activate && python /home/MinusGolos/Projects/newVersion2/main.py"
+StandardOutput=journal
+StandardError=journal
+MemoryMax=1G
 
 [Install]
 WantedBy=multi-user.target
