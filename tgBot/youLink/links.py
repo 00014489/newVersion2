@@ -2,6 +2,7 @@ import yt_dlp
 import os
 import data.connection as dataPostgres
 from yt_dlp.utils import YoutubeDLError
+import logging
 
 # Path to cookies.txt file
 # COOKIES_FILE_PATH = '/home/MinusGolos/Projects/newVersion2/cookies.txt'
@@ -71,9 +72,9 @@ async def get_audio_duration(url):
             return duration
 
     except YoutubeDLError as e:
-        print(f"Error with yt-dlp: {e}")
+        logging.info(f"Error with yt-dlp: {e}")
         return None  # Return None or a default value if an error occurs
 
     except Exception as e:
-        print(f"Error extracting duration: {e}")
+        logging.info(f"Error extracting duration: {e}")
         return None  # Return None or a default value if an error occurs
