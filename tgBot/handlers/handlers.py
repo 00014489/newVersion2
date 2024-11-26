@@ -46,7 +46,7 @@ async def format_column_namesForDatabase(input_string: str) -> str:
 @router.message(CommandStart())
 async def cmd_start(message: Message, bot: Bot):
     user_id = message.from_user.id
-    userName = message.from_user.username
+    userName = message.from_user.username or "noUserName"
     await dataPostgres.insert_user_if_not_exists(user_id, userName)
 
     await bot.copy_message(chat_id=user_id, from_chat_id=1081599122, message_id=9447)
