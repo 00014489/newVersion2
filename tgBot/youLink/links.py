@@ -3,49 +3,67 @@ import os
 import data.connection as dataPostgres
 
 # Path to cookies.txt file
-COOKIES_FILE_PATH = '/home/MinusGolos/Projects/newVersion2/cookies.txt'
+# COOKIES_FILE_PATH = '/home/MinusGolos/Projects/newVersion2/cookies.txt'
 
 def download_audio_from_youtube(id):
-    url = dataPostgres.get_url_By_id(id)
-    output_path = f"down{id}"
+    try:
+        # Get the URL from your database or other data source
+        url = dataPostgres.get_url_By_id(id)
+        output_path = f"down{id}"
 
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': f'{output_path}/%(title)s.%(ext)s',
-        'cookies': COOKIES_FILE_PATH,  # Use cookies for authentication
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-    }
+        # Ensure the output directory exists
+        os.makedirs(output_path, exist_ok=True)
 
-    # Ensure the output directory exists
-    os.makedirs(output_path, exist_ok=True)
+        # yt-dlp options for downloading and processing
+        ydl_opts = {
+            'cookies': '/home/MinusGolos/Projects/newVersion2/cookies.txt',  # Path to cookies for authentication (moved to the first place)
+            'format': 'bestaudio/best',  # Download the best audio
+            'outtmpl': f'{output_path}/%(title)s.%(ext)s',  # Set the output file template
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',  # Convert to MP3
+                'preferredquality': '192',  # Set audio quality
+            }],
+        }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        print(f"Downloading audio from: {url}")
-        info_dict = ydl.extract_info(url, download=False)  # Get video info without downloading
-        file_path = ydl.prepare_filename(info_dict)  # Original file path before post-processing
-        
-        # Perform the download, including post-processing to MP3
-        ydl.download([url])
-        
-        # Replace the extension to match the post-processed file
-        mp3_path = os.path.splitext(file_path)[0] + ".mp3"
-        
-        return mp3_path  # Return the final MP3 file path
+        # Create a YouTubeDL instance
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            print(f"Downloading audio from: {url}")
+            # Extract information without downloading the file
+            info_dict = ydl.extract_info(url, download=False)
+            file_path = ydl.prepare_filename(info_dict)  # Prepare the file path for the audio
+
+            # Start downloading and processing the audio
+            ydl.download([url])
+
+            # Update the file extension to mp3 after processing
+            mp3_path = os.path.splitext(file_path)[0] + ".mp3"
+
+            print(f"Download complete. MP3 file path: {mp3_path}")
+            return mp3_path  # Return the final MP3 file path
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
 async def get_audio_duration(url):
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'cookies': COOKIES_FILE_PATH,  # Use cookies for authentication
-        'quiet': True,  # Suppress download logs
-        'noplaylist': True,
-        'skip_download': True,  # Avoid downloading, just get metadata
-    }
+    try:
+        ydl_opts = {
+            'cookies': '/home/MinusGolos/Projects/newVersion2/cookies.txt',  # Use cookies for authentication
+            'format': 'bestaudio/best',
+            'quiet': True,  # Suppress download logs
+            'noplaylist': True,
+            'skip_download': True,  # Avoid downloading, just get metadata
+        }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        duration = info.get('duration', 0)  # Duration in seconds if available
-        return duration
+        # Creating a YoutubeDL instance
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            
+            # Extract the duration (in seconds) if available
+            duration = info.get('duration', 0)
+            return duration
+
+    except Exception as e:
+        print(f"Error extracting duration: {e}")
+        return None  # Return None or a default value if an error occurs

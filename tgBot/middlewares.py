@@ -85,7 +85,7 @@ async def handle_audio_message(message: Message, file_size_lm: int, file_duratio
         await message.reply(f"The song is too big ({file_size:.2f} MB). Please send a song in limits.\n\nLimits: Oridnary users -> Max 15 MB.\nPremium users -> Max 25 MB.")
         return
     if file_duration > file_duration_lm:
-        await message.reply(f"The song is too long ({file_duration:.2f} minutes). Please send a song in limits.\n\nLimits: Oridnary users -> Max 6 minutes.\nPremium users -> Max 10 minutes.")
+        await message.reply(f"The song is too long ({file_duration:.2f} minutes). Please send a song in limits.\n\nLimits: Oridnary users -> Max 4 minutes.\nPremium users -> Max 10 minutes.")
         return
 
     if not await dataPostgres.check_file_exists(file_id):
