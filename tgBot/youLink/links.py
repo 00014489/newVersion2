@@ -59,7 +59,7 @@ async def get_audio_duration(url):
         }
 
         # Check if the cookies file exists
-        if not os.path.exists(ydl_opts['cookies']):
+        if not os.path.exists(ydl_opts['cookiefile']):
             print("Cookies file does not exist.")
             return None
 
