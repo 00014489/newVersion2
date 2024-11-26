@@ -111,30 +111,6 @@ async def forward_message_to_users(from_chat_id: int, message_id: int, bot: Bot)
             print(f"Failed to forward message to user {user_id}: {e}")
         await asyncio.sleep(0.03)  # 30 milliseconds delay to respect Telegram API limits
 
-@router.message()
-async def handle_message_reklama(message: Message):
-    """
-    Handles incoming messages to the bot and forwards them to a list of users
-    depending on whether forwarding is enabled and which type of forwarding is desired.
-    This function is restricted to the admin.
-    """
-    global forwarding_enabled, forwarding_enabled_all
-
-    # Check if the user is the admin
-    if message.from_user and message.from_user.id != ADMIN_ID:
-        return  # Exit early if the user is not the admin
-    # await message.reply(f"{message.message_id} and chat {message.from_user.id}")
-
-    # Determine which forwarding action to take
-    if forwarding_enabled_all:
-        # Forward to all users
-        await forward_message_to_users(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot, to_all=True)
-    elif forwarding_enabled:
-        # Forward only to specific users
-        await forward_message_to_users(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot, to_all=False)
-    else:
-        # If neither is enabled, inform the admin
-        await message.answer("Message forwarding is currently disabled.")
 
 
 @router.callback_query(F.data.startswith("mix_vocals"))
@@ -182,7 +158,7 @@ async def turn_on_forwarding_all(message: Message):
     global forwarding_enabled_all
     if message.from_user.id == ADMIN_ID:
         forwarding_enabled_all = True
-        await message.answer("Message forwarding has been turned ON.")
+        await message.answer("Message forwarding for all has been turned ON.")
     else:
         await message.answer("You don't have permission to use this command.")
 
@@ -192,7 +168,7 @@ async def turn_off_forwarding_all(message: Message):
     global forwarding_enabled_all
     if message.from_user.id == ADMIN_ID:
         forwarding_enabled_all = False
-        await message.answer("Message forwarding has been turned OFF.")
+        await message.answer("Message forwarding for all has been turned OFF.")
     else:
         await message.answer("You don't have permission to use this command.")
 
@@ -228,6 +204,32 @@ async def forward_message_to_users(from_chat_id: int, message_id: int, bot: Bot,
         await asyncio.sleep(0.03)  # 30 milliseconds delay to respect Telegram API limits
 
 
+
+
+@router.message()
+async def handle_message_reklama(message: Message):
+    """
+    Handles incoming messages to the bot and forwards them to a list of users
+    depending on whether forwarding is enabled and which type of forwarding is desired.
+    This function is restricted to the admin.
+    """
+    global forwarding_enabled, forwarding_enabled_all
+
+    # Check if the user is the admin
+    if message.from_user and message.from_user.id != ADMIN_ID:
+        return  # Exit early if the user is not the admin
+    # await message.reply(f"{message.message_id} and chat {message.from_user.id}")
+
+    # Determine which forwarding action to take
+    if forwarding_enabled_all:
+        # Forward to all users
+        await forward_message_to_users(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot, to_all=True)
+    elif forwarding_enabled:
+        # Forward only to specific users
+        await forward_message_to_users(from_chat_id=message.chat.id, message_id=message.message_id, bot=message.bot, to_all=False)
+    else:
+        # If neither is enabled, inform the admin
+        await message.answer("Message forwarding is currently disabled.")
 
 # @router.message()
 # async def handle_message_reklama_all(message: Message):
