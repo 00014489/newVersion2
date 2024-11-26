@@ -57,7 +57,7 @@ def download_audio_from_youtube(id):
 async def get_audio_duration(url):
     try:
         ydl_opts = {
-            'cookies': COOKIES_FILE_PATH,  # Corrected to 'cookies'
+            'cookiefile': COOKIES_FILE_PATH,  # Corrected to 'cookies'
             'format': 'bestaudio/best',
             'quiet': True,  # Suppress download logs
             'noplaylist': True,  # Don't process playlists
@@ -68,7 +68,7 @@ async def get_audio_duration(url):
         }
 
         # Check if the cookies file exists
-        if not os.path.exists(ydl_opts['cookies']):
+        if not os.path.exists(ydl_opts['cookiefile']):
             print("Cookies file does not exist.")
             return None
 
