@@ -140,6 +140,7 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
                 await dataPostgres.insert_links(filtred, user_id)
                 # duration = await get_audio_duration(filtred)
         id = await dataPostgres.get_id_byUrl(filtred)
+        asyncio.sleep(1)
         await pleaseReply.delete()
         if duration < duration_lm:
             proccesing_messagee = await message.reply("Processing your YouTube audio...")
@@ -157,6 +158,7 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
                             await asyncio.sleep(5)
                         else:
                             await forward_message_to_user(bot, chat_id, message_id, user_id)
+                            asyncio.sleep(1)
                             await proccesing_messagee.delete()
                             # await pleaseReply.delete()
                             break

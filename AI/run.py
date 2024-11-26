@@ -15,10 +15,11 @@ logging.basicConfig(level=logging.INFO)
 
 # TensorFlow configuration
 try:
-    gpus = tf.config.experimental.list_physical_devices('GPU')
+    gpus = tf.config.list_physical_devices('GPU')  # Updated API
     if gpus:
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
+            # Alternative: tf.config.set_logical_device_configuration if needed
 except RuntimeError as e:
     logging.error(f"Error setting TensorFlow memory growth: {e}")
 
@@ -44,6 +45,7 @@ def run_spleeter(wav_input_file, new_folder):
     separator = Separator('spleeter:2stems')
     
     # Clear the previous session to avoid any conflicts
+    # tf.keras.backend.clear_session()
     tf.keras.backend.clear_session()
 
     # Run Spleeter's TensorFlow-based operation
