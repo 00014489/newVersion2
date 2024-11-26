@@ -17,7 +17,7 @@ def download_audio_from_youtube(id):
 
         # yt-dlp options for downloading and processing
         ydl_opts = {
-            'cookies': '/home/MinusGolos/Projects/newVersion2/cookies.txt',  # Path to cookies for authentication (moved to the first place)
+            'cookiefile': '/home/MinusGolos/Projects/newVersion2/cookies.txt',  # Path to cookies for authentication (moved to the first place)
             'format': 'bestaudio/best',  # Download the best audio
             'outtmpl': f'{output_path}/%(title)s.%(ext)s',  # Set the output file template
             'postprocessors': [{
@@ -50,7 +50,7 @@ def download_audio_from_youtube(id):
 async def get_audio_duration(url):
     try:
         ydl_opts = {
-            'cookies': '/home/MinusGolos/Projects/newVersion2/cookies.txt',  # Use cookies for authentication
+            'cookiefile': '/home/MinusGolos/Projects/newVersion2/cookies.txt',  # Use cookies for authentication
             'format': 'bestaudio/best',
             'quiet': True,  # Suppress download logs
             'noplaylist': True,
