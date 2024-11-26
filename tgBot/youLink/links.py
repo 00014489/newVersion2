@@ -1,6 +1,7 @@
 import yt_dlp
 import os
 import data.connection as dataPostgres
+from yt_dlp.utils import YoutubeDLError
 
 # Path to cookies.txt file
 # COOKIES_FILE_PATH = '/home/MinusGolos/Projects/newVersion2/cookies.txt'
@@ -56,6 +57,11 @@ async def get_audio_duration(url):
             'skip_download': True,  # Avoid downloading, just get metadata
         }
 
+        # Check if the cookies file exists
+        if not os.path.exists(ydl_opts['cookies']):
+            print("Cookies file does not exist.")
+            return None
+
         # Creating a YoutubeDL instance
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -63,6 +69,10 @@ async def get_audio_duration(url):
             # Extract the duration (in seconds) if available
             duration = info.get('duration', 0)
             return duration
+
+    except YoutubeDLError as e:
+        print(f"Error with yt-dlp: {e}")
+        return None  # Return None or a default value if an error occurs
 
     except Exception as e:
         print(f"Error extracting duration: {e}")

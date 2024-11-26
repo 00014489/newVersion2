@@ -18,6 +18,7 @@ def process_url():
 
             for url in urls:
                 try:
+                    logging.info("we are here before processing")
                     logging.info(f"Processing URL: {url}")
                     download_audio_from_youtube(url)  # Download audio
                     dataPostgres.update_order_list_false(url)  # Update status to FALSE
@@ -39,6 +40,7 @@ async def process_duration():
         if links:
             for link in links:
                 try:
+                    
                     logging.info(f"Processing link: {link}")
                     duration = await get_audio_duration(link)
                     await dataPostgres.update_links_duration(link, duration)
