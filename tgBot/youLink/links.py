@@ -2,13 +2,17 @@ import yt_dlp
 import os
 import data.connection as dataPostgres
 
+# Path to cookies.txt file
+COOKIES_FILE_PATH = './cookies.txt'
+
 def download_audio_from_youtube(id):
     url = dataPostgres.get_url_By_id(id)
     output_path = f"down{id}"
-    
+
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': f'{output_path}/%(title)s.%(ext)s',
+        'cookies': COOKIES_FILE_PATH,  # Use cookies for authentication
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -31,10 +35,11 @@ def download_audio_from_youtube(id):
         mp3_path = os.path.splitext(file_path)[0] + ".mp3"
         
         return mp3_path  # Return the final MP3 file path
-    
+
 async def get_audio_duration(url):
     ydl_opts = {
         'format': 'bestaudio/best',
+        'cookies': COOKIES_FILE_PATH,  # Use cookies for authentication
         'quiet': True,  # Suppress download logs
         'noplaylist': True,
         'skip_download': True,  # Avoid downloading, just get metadata
