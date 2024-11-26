@@ -5,7 +5,7 @@ from yt_dlp.utils import YoutubeDLError
 import logging
 
 # Path to cookies.txt file
-# COOKIES_FILE_PATH = '/home/MinusGolos/Projects/newVersion2/cookies.txt'
+COOKIES_FILE_PATH = '/home/MinusGolos/Projects/newVersion2/cookies.txt'
 
 def download_audio_from_youtube(id):
     try:
@@ -18,7 +18,7 @@ def download_audio_from_youtube(id):
 
         # yt-dlp options for downloading and processing
         ydl_opts = {
-            'cookiefile': '/home/MinusGolos/Projects/newVersion2/cookies.txt',  # Path to cookies for authentication (moved to the first place)
+            'cookiefile': COOKIES_FILE_PATH,  # Corrected to 'cookies'
             'format': 'bestaudio/best',  # Download the best audio
             'outtmpl': f'{output_path}/%(title)s.%(ext)s',  # Set the output file template
             'postprocessors': [{
@@ -26,6 +26,12 @@ def download_audio_from_youtube(id):
                 'preferredcodec': 'mp3',  # Convert to MP3
                 'preferredquality': '192',  # Set audio quality
             }],
+            'retries': 1,  # Limit retries to 1 (you can increase if necessary)
+            'geo_bypass': True,  # Try bypassing geo-restrictions
+            'no_check_certificate': True,  # Disable SSL certificate verification
+            'quiet': True,  # Suppress download logs
+            'noplaylist': True,  # Don't process playlists
+            'skip_download': False,  # Don't skip download (set to False because we want to download the file)
         }
 
         # Create a YouTubeDL instance
@@ -51,15 +57,18 @@ def download_audio_from_youtube(id):
 async def get_audio_duration(url):
     try:
         ydl_opts = {
-            'cookiefile': '/home/MinusGolos/Projects/newVersion2/cookies.txt',  # Use cookies for authentication
+            'cookies': COOKIES_FILE_PATH,  # Corrected to 'cookies'
             'format': 'bestaudio/best',
             'quiet': True,  # Suppress download logs
-            'noplaylist': True,
+            'noplaylist': True,  # Don't process playlists
             'skip_download': True,  # Avoid downloading, just get metadata
+            'retries': 1,  # Limit retries to 1 (you can increase if necessary)
+            'geo_bypass': True,  # Try bypassing geo-restrictions
+            'no_check_certificate': True,  # Disable SSL certificate verification
         }
 
         # Check if the cookies file exists
-        if not os.path.exists(ydl_opts['cookiefile']):
+        if not os.path.exists(ydl_opts['cookies']):
             print("Cookies file does not exist.")
             return None
 
