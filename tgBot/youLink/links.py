@@ -3,7 +3,7 @@ import os
 import data.connection as dataPostgres
 
 # Path to cookies.txt file
-COOKIES_FILE_PATH = './cookies.txt'
+COOKIES_FILE_PATH = '/home/MinusGolos/Projects/newVersion2/cookies.txt'
 
 def download_audio_from_youtube(id):
     url = dataPostgres.get_url_By_id(id)
