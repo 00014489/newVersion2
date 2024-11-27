@@ -90,6 +90,20 @@ def mix_vocals_and_accompaniment(accompaniment_file, vocals_file, vocal_percenta
     return output_file
 
     
+def get_audio_duration(file_path):
+    try:
+        # Use FFprobe to get the duration
+        result = subprocess.run(
+            ["ffprobe", "-i", file_path, "-show_entries", "format=duration", "-v", "quiet", "-of", "csv=p=0"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        duration = float(result.stdout.strip())
+        return duration
+    except Exception as e:
+        logging.error(f"Failed to get duration of the file: {file_path}, Error: {e}")
+        return None
 
 def process_audio_file(vocal_percentage: int, id_input: int, user_id: int, file_path: str, output_format='mp3'):
     """Process audio file with specified vocal percentage mixed into accompaniment."""
@@ -107,6 +121,14 @@ def process_audio_file(vocal_percentage: int, id_input: int, user_id: int, file_
         wav_input_file = convert_to_wav(file_path, output_directory, input_name)
     else:
         wav_input_file = file_path
+    
+    audio_duration = get_audio_duration(wav_input_file)
+
+    if audio_duration is not None:
+        logging.info(f"Audio duration of {wav_input_file}: {audio_duration} seconds")
+    else:
+        logging.warning(f"Could not retrieve duration for {wav_input_file}")
+
 
     logging.info(f"Starting Spleeter separation for {wav_input_file}")
     run_spleeter(wav_input_file, output_directory)
@@ -123,20 +145,44 @@ def process_audio_file(vocal_percentage: int, id_input: int, user_id: int, file_
     logging.info(f"Mixing with vocal percentage: {vocal_percentage}%")
 
     if int(vocal_percentage) == 0:
-        convert_accompaniment_to_mp3(accompaniment_file, output_directory, input_name, output_format)
+        output_file = convert_accompaniment_to_mp3(accompaniment_file, output_directory, input_name, output_format)
     else:
-        mix_vocals_and_accompaniment(accompaniment_file, vocals_file, vocal_percentage, output_directory, input_name, output_format)
+        output_file = mix_vocals_and_accompaniment(accompaniment_file, vocals_file, vocal_percentage, output_directory, input_name, output_format)
 
+    output_file_duration = get_audio_duration(output_file)
+
+    if output_file_duration is not None:
+        if abs(output_file_duration - audio_duration) <= 1.0:  # Allow a tolerance of 1 second
+            logging.info(f"Output file {output_file} has a matching duration: {output_file_duration} seconds.")
+            # Clean up intermediate files
+            os.remove(accompaniment_file)
+            if file_path != wav_input_file:
+                os.remove(wav_input_file)
+
+            elapsed_time = time.time() - start_time
+            logging.info(f"Processing completed in {elapsed_time:.2f} seconds.")
+            save_directory = f'./inputSongs{vocal_percentage}:{id_input}:{user_id}'
+            # Remove the save_directory folder and its contents
+            shutil.rmtree(save_directory, ignore_errors=True)
+            logging.info(f"Deleted temporary directory: {save_directory}")
+            gc.collect()
+        else:
+            logging.warning(f"Duration mismatch! Original: {audio_duration} seconds, Output: {output_file_duration} seconds.")
+            shutil.rmtree(output_directory, ignore_errors=True)
+            gc.collect()
+
+    else:
+        logging.error(f"Failed to retrieve the duration of the output file: {output_file}")
 
     # Clean up intermediate files
     # os.remove(accompaniment_file)
     # if file_path != wav_input_file:
     #     os.remove(wav_input_file)
 
-    elapsed_time = time.time() - start_time
-    logging.info(f"Processing completed in {elapsed_time:.2f} seconds.")
-    save_directory = f'./inputSongs{vocal_percentage}:{id_input}:{user_id}'
-    # Remove the save_directory folder and its contents
+    # elapsed_time = time.time() - start_time
+    # logging.info(f"Processing completed in {elapsed_time:.2f} seconds.")
+    # save_directory = f'./inputSongs{vocal_percentage}:{id_input}:{user_id}'
+    # # Remove the save_directory folder and its contents
     # shutil.rmtree(save_directory, ignore_errors=True)
-    logging.info(f"Deleted temporary directory: {save_directory}")
-    gc.collect()
+    # logging.info(f"Deleted temporary directory: {save_directory}")
+    # gc.collect()
