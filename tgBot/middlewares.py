@@ -6,7 +6,23 @@ import tgBot.bot_keyboards.inlineKeyboards as kbIn
 import data.connection as dataPostgres
 import logging
 import asyncio
+from aiogram.exceptions import TelegramBadRequest
 
+async def safe_delete_message(message):
+    if message:
+        try:
+            await message.delete()
+            logging.info(f"Message {message.message_id} deleted successfully.")
+        except TelegramBadRequest as e:
+            # Specifically check for "message not found"
+            if "message to delete not found" in str(e):
+                logging.warning(f"Message {message.message_id} was not found for deletion.")
+            else:
+                logging.error(f"Failed to delete message {message.message_id}: {e}")
+        except Exception as e:
+            logging.error(f"Unexpected error while deleting message {message.message_id}: {e}")
+    else:
+        logging.warning("Message object is None, nothing to delete.")
 
                         
 async def forward_message_to_user(bot: Bot, from_chat_id: int, message_id: int, to_chat_id: int):
@@ -78,8 +94,8 @@ async def handle_audio_message(message: Message, file_size_lm: int, file_duratio
     file_id = message.audio.file_id
     file_name = message.audio.file_name or "Unknown_Song.mp3"
     file_size = message.audio.file_size / (1024 * 1024)  # Convert size to MB
-    file_duration = message.audio.duration / 60  # Convert duration to minutes
-
+    seconds_duration = message.audio.duration  # Convert duration to minutes
+    file_duration = seconds_duration / 60
     # Validation: Check if the file is larger than 15 MB or longer than 6 minutes
     if file_size > file_size_lm:
         await message.reply(f"The song is too big ({file_size:.2f} MB). Please send a song in limits.\n\nLimits: Oridnary users -> Max 15 MB.\nPremium users -> Max 25 MB.")
@@ -94,7 +110,7 @@ async def handle_audio_message(message: Message, file_size_lm: int, file_duratio
         logging.info(f"File name {file_name_without_extension}")
         
         # Insert into the database with the file name without the extension
-        await dataPostgres.insert_into_input_file(file_id, format_column_namesForDatabase(file_name), file_name_without_extension)
+        await dataPostgres.insert_into_input_file(file_id, format_column_namesForDatabase(file_name), file_name_without_extension, seconds_duration)
 
     try:
         await message.reply("Please select the vocal percentage...", reply_markup=await kbIn.percent_choose(file_id))
@@ -129,7 +145,6 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
         # user_id = message.from_user.id
         while(True):
             if await dataPostgres.link_exists(filtred):
-                duration = None
                 duration = await dataPostgres.get_link_duration(filtred)
                 if duration == 0:
                     await asyncio.sleep(5)
@@ -142,7 +157,7 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
                 # duration = await get_audio_duration(filtred)
         id = await dataPostgres.get_id_byUrl(filtred)
         await asyncio.sleep(1)
-        await pleaseReply.delete()
+        await safe_delete_message(pleaseReply)
         if duration < duration_lm:
             proccesing_messagee = await message.reply("Processing your YouTube audio...")
             
@@ -160,13 +175,13 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
                         else:
                             await forward_message_to_user(bot, chat_id, message_id, user_id)
                             await asyncio.sleep(1)
+                            await safe_delete_message(proccesing_messagee)
                             await proccesing_messagee.delete()
-                            # await pleaseReply.delete()
                             break
             else:
                 await dataPostgres.insert_into_order_list(id)
-                await asyncio.sleep(20)
-                await proccesing_messagee.delete()
+                await asyncio.sleep(25)
+                await safe_delete_message(proccesing_messagee)
                 
             
         else:

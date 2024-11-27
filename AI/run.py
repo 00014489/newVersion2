@@ -152,7 +152,7 @@ def process_audio_file(vocal_percentage: int, id_input: int, user_id: int, file_
     output_file_duration = get_audio_duration(output_file)
 
     if output_file_duration is not None:
-        if abs(output_file_duration - audio_duration) <= 1.0:  # Allow a tolerance of 1 second
+        if 0<= abs(output_file_duration - audio_duration) <= 1.0:  # Allow a tolerance of 1 second
             logging.info(f"Output file {output_file} has a matching duration: {output_file_duration} seconds.")
             # Clean up intermediate files
             os.remove(accompaniment_file)

@@ -74,21 +74,44 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
                         mp3_files = list(folder.glob("*.mp3"))
                         if mp3_files:
                             mp3_file_path_send = mp3_files[0]  # Assuming only one .mp3 file per folder
-                            # logging.info(f"audio is located in {mp3_file_path_send}")
+                            logging.info(f"audio is located in {mp3_file_path_send}")
                             try:
-                                audio_duration = get_audio_duration(mp3_file_path_send)
-                                logging.info(f"duration before sending {audio_duration}")
-                                # logging.info(f"startig a sending")
-                                # original_filename_ = mp3_file_path_send.name  # Extract the original file name
                                 logging.info(f"startig a sending")
                                 file_to_sendS = FSInputFile(mp3_file_path_send, filename=mp3_file_path_send.name)
                                 sendFile = await bot.send_audio(chat_id=user_id, audio=file_to_sendS)
-                                id = await track_message(sendFile, vocal_percentage)
-                                logging.info(f"Message ID is {sendFile.message_id}")
+                                original_duration = await dataPostgres.get_duration_by_id(song_id_send)
+                                while True:    
+                                    if sendFile.audio:
+                                        audio_duration = sendFile.audio.duration
+                                        if 0 <= abs(original_duration - audio_duration) <= 1.0:
+                                            logging.info("Correct sending")
+                                            break
+                                        else:
+                                            try:
+                                                await bot.delete_message(chat_id=user_id, message_id=sendFile.message_id)
+                                                logging.info("Deleted incorrectly sent audio message.")
 
-                                file_id = await dataPostgres.get_file_id_by_id(song_id_send)
-                                await dataPostgres.update_out_id_by_percent(file_id, id, vocal_percentage)
-                                await deleting_folder(f"sendSongs{vocal_percentage}:{song_id_send}:{user_id}")
+                                            except Exception as e:
+                                                logging.error(f"Failed to delete message: {e}")
+                                            try:
+                                                sendFile = await bot.send_audio(chat_id=user_id, audio=file_to_sendS)
+                                            except FileNotFoundError as fnf_error:
+                                                logging.error(f"File not found: {fnf_error}")
+                                                logging.info("Skipping this retry due to missing file.")
+                                                sendFile = None
+                                                break  # Skip retry if the file cannot be found
+                                            except Exception as e:
+                                                logging.error(f"Error sending audio file: {e}")
+                                                logging.info("Skipping this retry due to sending error.")
+                                if sendFile:
+                                    id = await track_message(sendFile, vocal_percentage)
+                                    logging.info(f"Message ID is {sendFile.message_id}")
+
+                                    file_id = await dataPostgres.get_file_id_by_id(song_id_send)
+                                    await dataPostgres.update_out_id_by_percent(file_id, id, vocal_percentage)
+                                    await deleting_folder(f"sendSongs{vocal_percentage}:{song_id_send}:{user_id}")
+                                else:
+                                    logging.info("sendFile is None, skipping post-send operations.")
 
                             except TelegramBadRequest as e:
                                 logging.error(f"Failed to send audio for song_id {song_id_send}: {e}")
@@ -111,22 +134,46 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
                         mp3_files = list(folder.glob("*.mp3"))
                         if mp3_files:
                             mp3_file_path = mp3_files[0]  # Assuming only one .mp3 file per folder
-                            # logging.info(f"audio is located in {mp3_file_path}")
+                            logging.info(f"audio is located in {mp3_file_path}")
                             try:
                                 audio_duration_down = get_audio_duration(mp3_file_path)
+                                original_down_duration = await dataPostgres.get_duration_by_id_links(song_id)
                                 logging.info(f"duration before sending {audio_duration_down}")
-                                # await asyncio.sleep(3)
-                                # original_filename = mp3_file_path.name  # Extract the original file name
-                                logging.info(f"startig a sending")
-                                file_to_send = FSInputFile(mp3_file_path, filename=mp3_file_path.name)
-                                downFile = await bot.send_audio(chat_id=user_id_down, audio=file_to_send)
-                                # downFile = await bot.send_audio(chat_id=user_id_down, audio=FSInputFile(mp3_file_path))
-                                # id = await track_message(sendFile, vocal_percentage)
-                                # logging.info(f"Message ID is {sendFile.message_id}")
-                                await dataPostgres.update_linksYou_message_id(song_id, downFile.message_id)
-                                await deleting_folder(f"down{song_id}")
-                                # file_id = await dataPostgres.get_file_id_by_id(song_id)
-                                # await dataPostgres.update_out_id_by_percent(file_id, id, vocal_percentage)
+                                if 0 <= abs(original_down_duration - audio_duration_down) <= 1.0:
+                                    logging.info(f"startig a sending")
+                                    file_to_send = FSInputFile(mp3_file_path, filename=mp3_file_path.name)
+                                    downFile = await bot.send_audio(chat_id=user_id_down, audio=file_to_send)
+                                    while True:
+                                        if downFile.audio:
+                                            down_duration = downFile.audio.duration
+                                            if 0 <= abs(original_down_duration - down_duration) <= 1.0:
+                                                logging.info("Correct sending")
+                                                break
+                                            else:
+                                                try:
+                                                    await bot.delete_message(chat_id=user_id, message_id=downFile.message_id)
+                                                    logging.info("Deleted incorrectly sent audio message.")
+
+                                                except Exception as e:
+                                                    logging.error(f"Failed to delete message: {e}")
+                                                try:
+                                                    downFile = await bot.send_audio(chat_id=user_id, audio=file_to_send)
+                                                except FileNotFoundError as fnf_error:
+                                                    logging.error(f"File not found: {fnf_error}")
+                                                    logging.info("Skipping this retry due to missing file.")
+                                                    downFile = None
+                                                    break  # Skip retry if the file cannot be found
+                                                except Exception as e:
+                                                    logging.error(f"Error sending audio file: {e}")
+                                                    logging.info("Skipping this retry due to sending error.")
+                                    if downFile:
+                                        await dataPostgres.update_linksYou_message_id(song_id, downFile.message_id)
+                                        await deleting_folder(f"down{song_id}")
+                                    else:
+                                        logging.info("downFile is None, skipping post-send operations.")
+                                else:
+                                    await deleting_folder(f"down{song_id}")
+                                    await dataPostgres.update_order_list_true(song_id)
 
                             except TelegramBadRequest as e:
                                 logging.error(f"Failed to send audio for song_id {song_id}: {e}")
@@ -159,4 +206,3 @@ async def deleting_folder(folder_path):
         logging.info(f"Deleted folder: {folder_path}")
     except Exception as e:
         logging.error(f"Failed to delete folder {folder_path}: {e}")
-        # await bot.send_message(chat_id=user_id, text="Please try again.")

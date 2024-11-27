@@ -8,8 +8,8 @@ from datetime import datetime
 async def get_db_connection():
     conn = await psycopg.AsyncConnection.connect(
         user="postgres",
-        password="14489",
-        # password="0549",
+        # password="14489",
+        password="0549",
         host="localhost",
         port="5432",
         dbname="mydatabase"
@@ -24,8 +24,8 @@ async def get_db_connection():
 def get_db_connection_sync():
     conn = psycopg2.connect(
         user="postgres",
-        password="14489",
-        # password="0549",
+        # password="14489",
+        password="0549",
         host="localhost",
         port="5432",
         dbname="mydatabase"
@@ -173,17 +173,17 @@ async def link_exists(link: str) -> bool:
         await conn.close()  # Ensure the connection is closed
 
 
-async def insert_into_input_file(file_id: str, file_name: str, file_name_original: str):
+async def insert_into_input_file(file_id: str, file_name: str, file_name_original: str, duration: int):
     conn = await get_db_connection()  # Assuming you have get_db_connection() defined
     try:
         async with conn.cursor() as cur:
             # Insert into the input_file table
             await cur.execute(
                 """
-                INSERT INTO input_file (file_id, file_name, file_name_original)
-                VALUES (%s, %s, %s);
+                INSERT INTO input_file (file_id, file_name, file_name_original, duration)
+                VALUES (%s, %s, %s, %s);
                 """,
-                (file_id, file_name, file_name_original)
+                (file_id, file_name, file_name_original, duration)
             )
             await conn.commit()  # Commit the transaction to save the data
             logging.info(f"Inserted into input_file: file_id={file_id}")
@@ -467,6 +467,105 @@ async def get_file_id_by_id(id: int):
     finally:
         await conn.close()
         
+async def get_duration_by_id_links(id: int):
+    """
+    Retrieves the file_id from the table based on the given id.
+
+    :param id: The identifier to search for.
+    :return: The file_id associated with the given id, or None if not found.
+    """
+    query = """
+        SELECT duration
+        FROM linksyou
+        WHERE id = %s;
+    """
+    
+    conn = await get_db_connection()  # Assuming you have an async function to get DB connection
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute(query, (id,))
+            result = await cur.fetchone()  # Fetch the first matching result
+            
+            if result:
+                return result[0]  # Return the file_id
+            else:
+                logging.info(f"No record found for id: {id}.")
+                return None
+    except Exception as e:
+        logging.error(f"Error retrieving file_id for id {id}: {e}")
+        return None
+    finally:
+        await conn.close()
+
+
+async def update_order_list_true(id: int):
+    connection = None
+    try:
+        # Establish the connection to the database asynchronously
+        connection = await get_db_connection()
+        
+        # Define the SQL query to update the status to TRUE
+        query = """
+            UPDATE order_list
+            SET status = TRUE
+            WHERE url_id = $1;
+        """
+        
+        # Use an async cursor to execute the query
+        async with connection.cursor() as cursor:
+            await cursor.execute(query, (id,))
+        
+        # Commit the transaction to save the changes
+        await connection.commit()
+        
+        # Log success message
+        logging.info(f"Successfully updated order_list for id {id} to TRUE.")
+    
+    except (Exception, psycopg.Error) as error:
+        logging.error(f"Error while updating order_list: {error}", exc_info=True)
+    
+    finally:
+        if connection:
+            await connection.close()
+            logging.info("PostgreSQL connection is closed.")
+
+
+async def get_duration_by_id(id: int):
+    """
+    Retrieves the file_id from the table based on the given id.
+
+    :param id: The identifier to search for.
+    :return: The file_id associated with the given id, or None if not found.
+    """
+    query = """
+        SELECT duration
+        FROM input_file
+        WHERE id = %s;
+    """
+    
+    conn = await get_db_connection()  # Assuming you have an async function to get DB connection
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute(query, (id,))
+            result = await cur.fetchone()  # Fetch the first matching result
+            
+            if result:
+                return result[0]  # Return the file_id
+            else:
+                logging.info(f"No record found for id: {id}.")
+                return None
+    except Exception as e:
+        logging.error(f"Error retrieving file_id for id {id}: {e}")
+        return None
+    finally:
+        await conn.close()
+
+
+
+
+
+
+
 async def get_file_name_original_by_id(id: int):
     """
     Retrieves the file_name_original from the table based on the given id.
