@@ -139,7 +139,7 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
                                 audio_duration_down = get_audio_duration(mp3_file_path)
                                 original_down_duration = await dataPostgres.get_duration_by_id_links(song_id)
                                 logging.info(f"duration before sending {audio_duration_down}")
-                                if 0 <= abs(original_down_duration - audio_duration_down) <= 1.0:
+                                if 0 <= abs(original_down_duration - int(audio_duration_down)) <= 1.0:
                                     logging.info(f"startig a sending")
                                     file_to_send = FSInputFile(mp3_file_path, filename=mp3_file_path.name)
                                     downFile = await bot.send_audio(chat_id=user_id_down, audio=file_to_send)
