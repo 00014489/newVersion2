@@ -80,8 +80,8 @@ def check_and_match_input_song_folders(base_dir: str):
 def process_and_send_audio(vocal_percentage, song_id, user_id, audio_file_path):
     print(f"song_id - {song_id}")
 
-    file_name = dataPostgres.get_file_name_by_id(song_id)
-    print(f"song_name - {file_name}")
+    # file_name = dataPostgres.get_file_name_by_id(song_id)
+    # print(f"song_name - {file_name}")
     process_audio_file(vocal_percentage, song_id, user_id, audio_file_path)
 
 def run_task(base_dir):

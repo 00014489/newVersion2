@@ -117,14 +117,16 @@ async def forward_message_to_users(from_chat_id: int, message_id: int, bot: Bot)
 async def handle_playlist_move(callback: CallbackQuery, bot: Bot):
     # Extract playlist name and song_id from the callback data
     _, id_input, vocal_percentage = callback.data.split(":")
+    id_input_int = int(id_input)
     vocal_percentage = int(vocal_percentage)
-    file_id = await dataPostgres.get_file_id_by_id(int(id_input))
+    file_id = await dataPostgres.get_file_id_by_id(id_input_int)
     chat_id = callback.from_user.id
+    file_name_formated = await dataPostgres.get_file_name_by_id(id_input_int)
     processing_message = await callback.message.edit_text("Please wait ...")
 
-    if await dataPostgres.check_file_exists_with_percentage(file_id, vocal_percentage):
+    if await dataPostgres.check_file_exists_with_percentage(file_id, file_name_formated, vocal_percentage):
         while True:
-            if await dataPostgres.check_file_exists_with_percentage(file_id, vocal_percentage, "negative_one"):
+            if await dataPostgres.check_file_exists_with_percentage(file_id, file_name_formated, vocal_percentage, "negative_one"):
                 await asyncio.sleep(10)
                 logging.info(f"waiting a process")
             else:

@@ -58,6 +58,9 @@ class MessageHandlerMiddleware(BaseMiddleware):
                 await message.reply("This bot in not for groups and channels!")
                 return await handler(event, data)
             # username = message.from_user.username
+            userName = message.from_user.username or "noUserName"
+            await dataPostgres.insert_user_if_not_exists(user_id, userName)
+
             messageText = message.text
             if messageText and messageText.startswith("/"):
                 print("skiping the command")
@@ -103,14 +106,14 @@ async def handle_audio_message(message: Message, file_size_lm: int, file_duratio
     if file_duration > file_duration_lm:
         await message.reply(f"The song is too long ({file_duration:.2f} minutes). Please send a song in limits.\n\nLimits: Oridnary users -> Max 4 minutes.\nPremium users -> Max 10 minutes.")
         return
-
-    if not await dataPostgres.check_file_exists(file_id):
+    file_name_formated = format_column_namesForDatabase(file_name)
+    if not await dataPostgres.check_file_exists(file_id, file_name_formated):
         # Get the file name without the extension
         file_name_without_extension = get_file_name_without_extension(file_name)
         logging.info(f"File name {file_name_without_extension}")
         
         # Insert into the database with the file name without the extension
-        await dataPostgres.insert_into_input_file(file_id, format_column_namesForDatabase(file_name), file_name_without_extension, seconds_duration)
+        await dataPostgres.insert_into_input_file(file_id, file_name_formated, file_name_without_extension, seconds_duration)
 
     try:
         await message.reply("Please select the vocal percentage...", reply_markup=await kbIn.percent_choose(file_id))

@@ -62,7 +62,7 @@ async def insert_user_if_not_exists(user_id: int, user_name: str):
 
 
 
-async def check_file_exists(file_id: str) -> bool:
+async def check_file_exists(file_id: str, file_name: str) -> bool:
     conn = await get_db_connection()
     try:
         async with conn.cursor() as cur:
@@ -72,10 +72,10 @@ async def check_file_exists(file_id: str) -> bool:
                 SELECT EXISTS (
                     SELECT 1
                     FROM input_file
-                    WHERE file_id = %s
+                    WHERE file_id = %s OR file_name = %s
                 );
                 """,
-                (file_id,)
+                (file_id, file_name)
             )
             # Fetch the result
             result = await cur.fetchone()
@@ -193,7 +193,7 @@ async def insert_into_input_file(file_id: str, file_name: str, file_name_origina
         await conn.close()  # Ensure the connection is closed
 
 
-async def check_file_exists_with_percentage(file_id: str, percent: int, check_value: str = "not_zero") -> bool:
+async def check_file_exists_with_percentage(file_id: str, file_name: str, percent: int, check_value: str = "not_zero") -> bool:
     """
     Check if a file exists in the database with a specific percentage condition.
 
@@ -224,10 +224,10 @@ async def check_file_exists_with_percentage(file_id: str, percent: int, check_va
                 SELECT EXISTS (
                     SELECT 1
                     FROM input_file
-                    WHERE file_id = %s AND {condition}
+                    WHERE (file_id = %s OR file_name = %s) AND {condition}
                 );
             """
-            await cur.execute(query, (file_id,))
+            await cur.execute(query, (file_id, file_name))
             
             # Fetch the result
             result = await cur.fetchone()
@@ -628,7 +628,7 @@ def get_file_id_by_id_sync(id: int):
     finally:
         conn.close()  # Ensure the connection is closed
 
-def get_file_name_by_id(id: int):
+async def get_file_name_by_id(id: int):
     """
     Retrieves the file_name from the table based on the given id.
 
@@ -641,12 +641,12 @@ def get_file_name_by_id(id: int):
         WHERE id = %s;
     """
     
-    conn = get_db_connection_sync()  # Synchronous connection to the database
+    conn = await get_db_connection()  # Asynchronous connection to the database
     try:
-        with conn.cursor() as cur:
+        async with conn.cursor() as cur:
             logging.info(f"Executing query: {query} with id: {id}")
-            cur.execute(query, (id,))
-            result = cur.fetchone()  # Fetch the first matching result
+            await cur.execute(query, (id,))
+            result = await cur.fetchone()  # Fetch the first matching result
             
             if result:
                 logging.info(f"Record found for id {id}: {result[0]}")
@@ -658,8 +658,7 @@ def get_file_name_by_id(id: int):
         logging.error(f"Error retrieving file_name for id {id}: {e}")
         return None
     finally:
-        conn.close()  # Ensure the connection is closed
-
+        await conn.close()  # Ensure the connection is closed asynchronously
 
 
 async def get_user_ids():
