@@ -25,7 +25,7 @@ def get_audio_duration(file_path):
             stderr=subprocess.PIPE,
             text=True
         )
-        duration = float(result.stdout.strip())
+        duration = result.stdout.strip()
         return duration
     except Exception as e:
         logging.error(f"Failed to get duration of the file: {file_path}, Error: {e}")
