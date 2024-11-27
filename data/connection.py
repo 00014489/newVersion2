@@ -9,6 +9,7 @@ async def get_db_connection():
     conn = await psycopg.AsyncConnection.connect(
         user="postgres",
         password="14489",
+        # password="0549",
         host="localhost",
         port="5432",
         dbname="mydatabase"
@@ -24,6 +25,7 @@ def get_db_connection_sync():
     conn = psycopg2.connect(
         user="postgres",
         password="14489",
+        # password="0549",
         host="localhost",
         port="5432",
         dbname="mydatabase"

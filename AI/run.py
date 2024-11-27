@@ -112,7 +112,7 @@ def process_audio_file(vocal_percentage: int, id_input: int, user_id: int, file_
     run_spleeter(wav_input_file, output_directory)
     logging.info(f"Completed Spleeter separation for {wav_input_file}")
 
-    accompaniment_file = os.path.join(output_directory, input_name, 'accompaniment.wav')
+    accompaniment_file = os.path.join(output_directory, input_name, f'accompaniment.wav')
     vocals_file = os.path.join(output_directory, input_name, 'vocals.wav')
 
     if not os.path.exists(accompaniment_file):
@@ -129,14 +129,14 @@ def process_audio_file(vocal_percentage: int, id_input: int, user_id: int, file_
 
 
     # Clean up intermediate files
-    os.remove(accompaniment_file)
-    if file_path != wav_input_file:
-        os.remove(wav_input_file)
+    # os.remove(accompaniment_file)
+    # if file_path != wav_input_file:
+    #     os.remove(wav_input_file)
 
     elapsed_time = time.time() - start_time
     logging.info(f"Processing completed in {elapsed_time:.2f} seconds.")
     save_directory = f'./inputSongs{vocal_percentage}:{id_input}:{user_id}'
     # Remove the save_directory folder and its contents
-    shutil.rmtree(save_directory, ignore_errors=True)
+    # shutil.rmtree(save_directory, ignore_errors=True)
     logging.info(f"Deleted temporary directory: {save_directory}")
     gc.collect()
