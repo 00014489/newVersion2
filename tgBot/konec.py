@@ -10,11 +10,26 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from aiogram.exceptions import TelegramBadRequest
 from pathlib import Path
-
+import subprocess
 
     
 # Initialize task_starting as True or False based on your requirements
 task_starting = True
+
+def get_audio_duration(file_path):
+    try:
+        # Use FFprobe to get the duration
+        result = subprocess.run(
+            ["ffprobe", "-i", file_path, "-show_entries", "format=duration", "-v", "quiet", "-of", "csv=p=0"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        duration = float(result.stdout.strip())
+        return duration
+    except Exception as e:
+        logging.error(f"Failed to get duration of the file: {file_path}, Error: {e}")
+        return None
 
 async def track_message(message: Message, percentage: int):
     message_id = message.message_id
@@ -61,6 +76,8 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
                             mp3_file_path_send = mp3_files[0]  # Assuming only one .mp3 file per folder
                             # logging.info(f"audio is located in {mp3_file_path_send}")
                             try:
+                                audio_duration = get_audio_duration(mp3_file_path_send)
+                                logging.info(f"duration before sending {audio_duration}")
                                 # logging.info(f"startig a sending")
                                 # original_filename_ = mp3_file_path_send.name  # Extract the original file name
                                 logging.info(f"startig a sending")
@@ -96,6 +113,8 @@ async def check_and_match_song_folders(base_dir: str, bot: Bot):
                             mp3_file_path = mp3_files[0]  # Assuming only one .mp3 file per folder
                             # logging.info(f"audio is located in {mp3_file_path}")
                             try:
+                                audio_duration_down = get_audio_duration(mp3_file_path)
+                                logging.info(f"duration before sending {audio_duration_down}")
                                 # await asyncio.sleep(3)
                                 # original_filename = mp3_file_path.name  # Extract the original file name
                                 logging.info(f"startig a sending")

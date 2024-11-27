@@ -133,6 +133,7 @@ async def main_fun_process(messageText: str, duration_lm: int, file_size_lm: int
                 duration = await dataPostgres.get_link_duration(filtred)
                 if duration == 0:
                     await asyncio.sleep(5)
+                    logging.info("waiting a link duration")
                 else:
                     logging.info(f"found the duration {duration}")
                     break

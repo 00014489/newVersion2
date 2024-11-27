@@ -18,7 +18,7 @@ def process_url():
 
             for url in urls:
                 try:
-                    logging.info("we are here before processing")
+                    # logging.info("we are here before processing")
                     logging.info(f"Processing URL: {url}")
                     download_audio_from_youtube(url)  # Download audio
                     dataPostgres.update_order_list_false(url)  # Update status to FALSE
